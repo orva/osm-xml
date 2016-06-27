@@ -9,6 +9,8 @@ use xml::reader::{EventReader, XmlEvent};
 use xml::name::OwnedName;
 use xml::attribute::OwnedAttribute;
 
+type Coordinate = f64;
+
 enum ErrorKind {
     BoundsMissing(AttributeError),
 }
@@ -26,10 +28,10 @@ impl From<num::ParseFloatError> for AttributeError {
 
 #[allow(dead_code)]
 pub struct Bounds {
-    minlat: f64,
-    minlon: f64,
-    maxlat: f64,
-    maxlon: f64,
+    minlat: Coordinate,
+    minlon: Coordinate,
+    maxlat: Coordinate,
+    maxlon: Coordinate,
 }
 
 #[allow(dead_code)]
@@ -88,8 +90,10 @@ fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<Bounds, ErrorKind> {
     })
 }
 
-fn find_attribute<T: FromStr>( name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, AttributeError>
-    where AttributeError: std::convert::From<<T as std::str::FromStr>::Err>
+
+fn find_attribute<T>( name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, AttributeError>
+    where AttributeError: std::convert::From<<T as std::str::FromStr>::Err>,
+          T: FromStr
 {
     let attr = attrs.iter().find(|attr| attr.name.local_name == name);
     match attr {
