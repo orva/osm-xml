@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Iivari Äikäs <iivari.aikas@reaktor.com>"]
 
 [dependencies]
+xml-rs = "0.3"
