@@ -3,10 +3,26 @@ extern crate xml;
 use std::fs::File;
 use std::io::BufReader;
 use std::str::FromStr;
+use std::num;
 
 use xml::reader::{EventReader, XmlEvent};
 use xml::name::OwnedName;
 use xml::attribute::OwnedAttribute;
+
+enum ErrorKind {
+    BoundsMissing(AttributeError),
+}
+
+enum AttributeError {
+    ParseFloat(num::ParseFloatError),
+    Missing
+}
+
+impl From<num::ParseFloatError> for AttributeError {
+    fn from(err: num::ParseFloatError) -> AttributeError {
+        AttributeError::ParseFloat(err)
+    }
+}
 
 #[allow(dead_code)]
 pub struct Bounds {
@@ -18,13 +34,13 @@ pub struct Bounds {
 
 #[allow(dead_code)]
 pub struct OSM {
-    bounds: Bounds
+    bounds: Option<Bounds>
 }
 
 impl OSM {
     fn empty() -> OSM {
         OSM {
-            bounds: Bounds { minlat: 0.0, minlon: 0.0, maxlat: 0.0, maxlon: 0.0 }
+            bounds: None
         }
     }
 
@@ -51,36 +67,37 @@ fn handle_element(osm: &mut OSM, name: OwnedName, attrs: Vec<OwnedAttribute>) {
     let downcased = name.local_name.to_lowercase();
 
     if downcased == "bounds" {
-        let bounds = parse_bounds(&attrs);
-        osm.bounds = bounds;
+        match parse_bounds(&attrs) {
+            Ok(bounds) => osm.bounds = Some(bounds),
+            Err(_) => osm.bounds = None
+        }
     }
 }
 
-fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Bounds {
-    let minlat = find_attribute::<f64>("minlat", attrs).unwrap();
-    let minlon = find_attribute::<f64>("minlon", attrs).unwrap();
-    let maxlat = find_attribute::<f64>("maxlat", attrs).unwrap();
-    let maxlon = find_attribute::<f64>("maxlon", attrs).unwrap();
+fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<Bounds, ErrorKind> {
+    let minlat = try!(find_attribute::<f64>("minlat", attrs).map_err(ErrorKind::BoundsMissing));
+    let minlon = try!(find_attribute::<f64>("minlon", attrs).map_err(ErrorKind::BoundsMissing));
+    let maxlat = try!(find_attribute::<f64>("maxlat", attrs).map_err(ErrorKind::BoundsMissing));
+    let maxlon = try!(find_attribute::<f64>("maxlon", attrs).map_err(ErrorKind::BoundsMissing));
 
-    Bounds {
+    Ok(Bounds {
         minlat: minlat,
         minlon: minlon,
         maxlat: maxlat,
         maxlon: maxlon,
-    }
+    })
 }
 
-fn find_attribute<T: FromStr>(name: &str, attrs: &Vec<OwnedAttribute>) -> Option<T> {
+fn find_attribute<T: FromStr>( name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, AttributeError>
+    where AttributeError: std::convert::From<<T as std::str::FromStr>::Err>
+{
     let attr = attrs.iter().find(|attr| attr.name.local_name == name);
     match attr {
         Some(a) => {
-            let val = a.value.parse::<T>();
-            match val {
-                Ok(v) => Some(v),
-                _ => None
-            }
+            let val = try!(a.value.parse::<T>());
+            Ok(val)
         },
-        None => None
+        None => Err(AttributeError::Missing)
     }
 }
 
@@ -93,9 +110,10 @@ mod tests {
     fn bounds_parsing() {
         let f = File::open("./test_data/bounds.osm").unwrap();
         let osm = OSM::parse(f).unwrap();
-        assert_eq!(osm.bounds.minlat, 54.0889580);
-        assert_eq!(osm.bounds.minlon, 12.2487570);
-        assert_eq!(osm.bounds.maxlat, 54.0913900);
-        assert_eq!(osm.bounds.maxlon, 12.2524800);
+        let bounds = osm.bounds.unwrap();
+        assert_eq!(bounds.minlat, 54.0889580);
+        assert_eq!(bounds.minlon, 12.2487570);
+        assert_eq!(bounds.maxlat, 54.0913900);
+        assert_eq!(bounds.maxlon, 12.2524800);
     }
 }
