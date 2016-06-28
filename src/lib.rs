@@ -11,6 +11,7 @@ use xml::attribute::OwnedAttribute;
 
 pub type Coordinate = f64;
 
+#[derive(Debug, PartialEq)]
 pub struct Bounds {
     pub minlat: Coordinate,
     pub minlon: Coordinate,
