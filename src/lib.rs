@@ -9,34 +9,18 @@ use xml::reader::{EventReader, XmlEvent};
 use xml::name::OwnedName;
 use xml::attribute::OwnedAttribute;
 
-type Coordinate = f64;
+pub type Coordinate = f64;
 
-enum ErrorKind {
-    BoundsMissing(AttributeError),
-}
-
-enum AttributeError {
-    ParseFloat(num::ParseFloatError),
-    Missing
-}
-
-impl From<num::ParseFloatError> for AttributeError {
-    fn from(err: num::ParseFloatError) -> AttributeError {
-        AttributeError::ParseFloat(err)
-    }
-}
-
-#[allow(dead_code)]
 pub struct Bounds {
-    minlat: Coordinate,
-    minlon: Coordinate,
-    maxlat: Coordinate,
-    maxlon: Coordinate,
+    pub minlat: Coordinate,
+    pub minlon: Coordinate,
+    pub maxlat: Coordinate,
+    pub maxlon: Coordinate,
 }
 
 #[allow(dead_code)]
 pub struct OSM {
-    bounds: Option<Bounds>
+    pub bounds: Option<Bounds>
 }
 
 impl OSM {
@@ -62,6 +46,21 @@ impl OSM {
         }
 
         Some(osm)
+    }
+}
+
+enum ErrorKind {
+    BoundsMissing(AttributeError),
+}
+
+enum AttributeError {
+    ParseFloat(num::ParseFloatError),
+    Missing
+}
+
+impl From<num::ParseFloatError> for AttributeError {
+    fn from(err: num::ParseFloatError) -> AttributeError {
+        AttributeError::ParseFloat(err)
     }
 }
 
@@ -102,22 +101,5 @@ fn find_attribute<T>( name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, Attr
             Ok(val)
         },
         None => Err(AttributeError::Missing)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs::File;
-
-    #[test]
-    fn bounds_parsing() {
-        let f = File::open("./test_data/bounds.osm").unwrap();
-        let osm = OSM::parse(f).unwrap();
-        let bounds = osm.bounds.unwrap();
-        assert_eq!(bounds.minlat, 54.0889580);
-        assert_eq!(bounds.minlon, 12.2487570);
-        assert_eq!(bounds.maxlat, 54.0913900);
-        assert_eq!(bounds.maxlon, 12.2524800);
     }
 }
