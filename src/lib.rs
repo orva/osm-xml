@@ -19,7 +19,6 @@ pub struct Bounds {
     pub maxlon: Coordinate,
 }
 
-#[allow(dead_code)]
 pub struct OSM {
     pub bounds: Option<Bounds>
 }
@@ -52,6 +51,7 @@ impl OSM {
 
 enum ErrorKind {
     BoundsMissing(AttributeError),
+    UnkownElement
 }
 
 enum AttributeError {
@@ -65,14 +65,56 @@ impl From<num::ParseFloatError> for AttributeError {
     }
 }
 
-fn handle_element(osm: &mut OSM, name: OwnedName, attrs: Vec<OwnedAttribute>) {
-    let downcased = name.local_name.to_lowercase();
+#[allow(dead_code)]
+enum ElementType {
+    Bounds,
+    Node,
+    Way,
+    Relation
+}
 
-    if downcased == "bounds" {
-        match parse_bounds(&attrs) {
-            Ok(bounds) => osm.bounds = Some(bounds),
-            Err(_) => osm.bounds = None
+impl FromStr for ElementType {
+    type Err = ErrorKind;
+
+    fn from_str(s: &str) -> Result<ElementType, ErrorKind> {
+        let downcased = s.to_lowercase();
+
+        if downcased == "bounds" {
+            return Ok(ElementType::Bounds);
         }
+
+        if downcased == "node" {
+            return Ok(ElementType::Way);
+        }
+
+        if downcased == "way" {
+            return Ok(ElementType::Way);
+        }
+
+        if downcased == "relation" {
+            return Ok(ElementType::Relation);
+        }
+
+        Err(ErrorKind::UnkownElement)
+    }
+}
+
+fn handle_element(osm: &mut OSM, name: OwnedName, attrs: Vec<OwnedAttribute>) {
+    match ElementType::from_str(&name.local_name) {
+        Ok(element) => {
+            match element {
+                ElementType::Bounds => set_bounds(osm, &attrs),
+                _ => ()
+            }
+        },
+        Err(_) => ()
+    }
+}
+
+fn set_bounds(osm: &mut OSM, attrs: &Vec<OwnedAttribute>) {
+    match parse_bounds(&attrs) {
+        Ok(bounds) => osm.bounds = Some(bounds),
+        Err(_) => osm.bounds = None
     }
 }
 
