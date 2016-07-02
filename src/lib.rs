@@ -119,10 +119,10 @@ fn set_bounds(osm: &mut OSM, attrs: &Vec<OwnedAttribute>) {
 }
 
 fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<Bounds, ErrorKind> {
-    let minlat = try!(find_attribute::<Coordinate>("minlat", attrs).map_err(ErrorKind::BoundsMissing));
-    let minlon = try!(find_attribute::<Coordinate>("minlon", attrs).map_err(ErrorKind::BoundsMissing));
-    let maxlat = try!(find_attribute::<Coordinate>("maxlat", attrs).map_err(ErrorKind::BoundsMissing));
-    let maxlon = try!(find_attribute::<Coordinate>("maxlon", attrs).map_err(ErrorKind::BoundsMissing));
+    let minlat = try!(find_attribute("minlat", attrs).map_err(ErrorKind::BoundsMissing));
+    let minlon = try!(find_attribute("minlon", attrs).map_err(ErrorKind::BoundsMissing));
+    let maxlat = try!(find_attribute("maxlat", attrs).map_err(ErrorKind::BoundsMissing));
+    let maxlon = try!(find_attribute("maxlon", attrs).map_err(ErrorKind::BoundsMissing));
 
     Ok(Bounds {
         minlat: minlat,
