@@ -19,14 +19,24 @@ pub struct Bounds {
     pub maxlon: Coordinate,
 }
 
+#[derive(Debug, PartialEq)]
+pub struct Node {
+    pub id: i64,
+    pub lat: Coordinate,
+    pub lon: Coordinate,
+}
+
+#[derive(Debug)]
 pub struct OSM {
-    pub bounds: Option<Bounds>
+    pub bounds: Option<Bounds>,
+    pub nodes: Vec<Node>
 }
 
 impl OSM {
     fn empty() -> OSM {
         OSM {
-            bounds: None
+            bounds: None,
+            nodes: Vec::new()
         }
     }
 
@@ -49,19 +59,30 @@ impl OSM {
     }
 }
 
+#[derive(Debug)]
 enum ErrorKind {
     BoundsMissing(AttributeError),
-    UnkownElement
+    IdMissing(AttributeError),
+    CoordinateMissing(AttributeError),
+    UnknownElement
 }
 
+#[derive(Debug)]
 enum AttributeError {
     ParseFloat(num::ParseFloatError),
+    ParseInt(num::ParseIntError),
     Missing
 }
 
 impl From<num::ParseFloatError> for AttributeError {
     fn from(err: num::ParseFloatError) -> AttributeError {
         AttributeError::ParseFloat(err)
+    }
+}
+
+impl From<num::ParseIntError> for AttributeError {
+    fn from(err: num::ParseIntError) -> AttributeError {
+        AttributeError::ParseInt(err)
     }
 }
 
@@ -72,6 +93,7 @@ enum ElementType {
     Way,
     Relation
 }
+
 
 impl FromStr for ElementType {
     type Err = ErrorKind;
@@ -84,7 +106,7 @@ impl FromStr for ElementType {
         }
 
         if downcased == "node" {
-            return Ok(ElementType::Way);
+            return Ok(ElementType::Node);
         }
 
         if downcased == "way" {
@@ -95,7 +117,7 @@ impl FromStr for ElementType {
             return Ok(ElementType::Relation);
         }
 
-        Err(ErrorKind::UnkownElement)
+        Err(ErrorKind::UnknownElement)
     }
 }
 
@@ -104,6 +126,7 @@ fn handle_element(osm: &mut OSM, name: OwnedName, attrs: Vec<OwnedAttribute>) {
         Ok(element) => {
             match element {
                 ElementType::Bounds => set_bounds(osm, &attrs),
+                ElementType::Node => insert_node(osm, &attrs),
                 _ => ()
             }
         },
@@ -115,6 +138,13 @@ fn set_bounds(osm: &mut OSM, attrs: &Vec<OwnedAttribute>) {
     match parse_bounds(&attrs) {
         Ok(bounds) => osm.bounds = Some(bounds),
         Err(_) => osm.bounds = None
+    }
+}
+
+fn insert_node(osm: &mut OSM, attrs: &Vec<OwnedAttribute>) {
+    match parse_node(&attrs) {
+        Ok(node) => osm.nodes.push(node),
+        Err(_) => ()
     }
 }
 
@@ -132,6 +162,17 @@ fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<Bounds, ErrorKind> {
     })
 }
 
+fn parse_node(attrs: &Vec<OwnedAttribute>) -> Result<Node, ErrorKind> {
+    let id = try!(find_attribute("id", attrs).map_err(ErrorKind::IdMissing));
+    let lon = try!(find_attribute("lon", attrs).map_err(ErrorKind::CoordinateMissing));
+    let lat = try!(find_attribute("lat", attrs).map_err(ErrorKind::CoordinateMissing));
+
+    Ok(Node {
+        id: id,
+        lon: lon,
+        lat: lat
+    })
+}
 
 fn find_attribute<T>( name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, AttributeError>
     where AttributeError: std::convert::From<<T as std::str::FromStr>::Err>,
