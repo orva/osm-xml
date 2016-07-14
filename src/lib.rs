@@ -12,6 +12,12 @@ use xml::attribute::OwnedAttribute;
 pub type Coordinate = f64;
 
 #[derive(Debug, PartialEq)]
+pub struct Tag {
+    pub key: String,
+    pub val: String
+}
+
+#[derive(Debug, PartialEq)]
 pub struct Bounds {
     pub minlat: Coordinate,
     pub minlon: Coordinate,
@@ -24,6 +30,7 @@ pub struct Node {
     pub id: i64,
     pub lat: Coordinate,
     pub lon: Coordinate,
+    pub tags: Vec<Tag>
 }
 
 #[derive(Debug)]
@@ -36,7 +43,7 @@ impl OSM {
     fn empty() -> OSM {
         OSM {
             bounds: None,
-            nodes: Vec::new()
+            nodes: Vec::new(),
         }
     }
 
@@ -170,7 +177,8 @@ fn parse_node(attrs: &Vec<OwnedAttribute>) -> Result<Node, ErrorKind> {
     Ok(Node {
         id: id,
         lon: lon,
-        lat: lat
+        lat: lat,
+        tags: Vec::new()
     })
 }
 
