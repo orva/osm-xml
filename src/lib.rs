@@ -6,7 +6,6 @@ use std::str::FromStr;
 use std::num;
 
 use xml::reader::{EventReader, XmlEvent};
-use xml::name::OwnedName;
 use xml::attribute::OwnedAttribute;
 
 pub type Coordinate = f64;
@@ -56,7 +55,16 @@ impl OSM {
         for element in parser {
             match element {
                 Ok(XmlEvent::StartElement { name, attributes, .. }) => {
-                    handle_element(&mut osm, name, attributes);
+                    match ElementType::from_str(&name.local_name) {
+                        Ok(element) => {
+                            match element {
+                                ElementType::Bounds => set_bounds(&mut osm, &attributes),
+                                ElementType::Node => insert_node(&mut osm, &attributes),
+                                _ => ()
+                            }
+                        },
+                        Err(_) => ()
+                    }
                 },
                 _ => { }
             }
@@ -125,19 +133,6 @@ impl FromStr for ElementType {
         }
 
         Err(ErrorKind::UnknownElement)
-    }
-}
-
-fn handle_element(osm: &mut OSM, name: OwnedName, attrs: Vec<OwnedAttribute>) {
-    match ElementType::from_str(&name.local_name) {
-        Ok(element) => {
-            match element {
-                ElementType::Bounds => set_bounds(osm, &attrs),
-                ElementType::Node => insert_node(osm, &attrs),
-                _ => ()
-            }
-        },
-        Err(_) => ()
     }
 }
 
