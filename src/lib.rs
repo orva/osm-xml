@@ -72,12 +72,14 @@ impl OSM {
                                 maxlon: maxlon
                             });
                         },
-                        ElementData::Node(id, lat, lon) => {
+                        ElementData::Node(id, lat, lon, tags) => {
                             osm.nodes.push(Node {
                                 id: id,
                                 lat: lat,
                                 lon: lon,
-                                tags: Vec::new()
+                                tags: tags.into_iter()
+                                        .map(|t| Tag { key: t.0, val: t.1 })
+                                        .collect()
                             });
                         },
                         _ => ()
@@ -98,8 +100,9 @@ enum ElementType {
 
 enum ElementData {
     Bounds(f64, f64, f64, f64),
-    Node(i64, f64, f64),
-    Tag(String, String),
+    NodeAttrs(i64, f64, f64),
+    Node(i64, f64, f64, Vec<(String, String)>),
+    Tags(Vec<(String, String)>),
     // These two are here so we can terminate and skip uninteresting data without
     // using error handling.
     EndOfDocument,
@@ -129,6 +132,10 @@ impl FromStr for ElementType {
             return Ok(ElementType::Relation);
         }
 
+        if downcased == "tag" {
+            return Ok(ElementType::Tag);
+        }
+
         Err(ErrorKind::UnknownElement)
     }
 }
@@ -139,13 +146,74 @@ fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<Eleme
         XmlEvent::EndDocument => Ok(ElementData::EndOfDocument),
         XmlEvent::StartElement { name, attributes, .. } => {
             let element_type = try!(ElementType::from_str(&name.local_name));
+
             match element_type {
                 ElementType::Bounds => parse_bounds(&attributes),
-                ElementType::Node => parse_node_attributes(&attributes),
+                ElementType::Node => parse_node(parser, &attributes),
                 _ => Err(ErrorKind::UnknownElement)
             }
         },
         _ => Ok(ElementData::Ignored)
+    }
+}
+
+
+fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
+    let node_attrs = try!(parse_node_attributes(&attrs));
+    let wrapped_tags = try!(parse_tags(parser));
+
+    match node_attrs {
+        ElementData::NodeAttrs(id, lat, lon) => {
+            let tags = match wrapped_tags {
+                ElementData::Tags(tag_arr) => tag_arr,
+                _ => Vec::new()
+            };
+
+            Ok(ElementData::Node(id, lat, lon, tags))
+        },
+        _ => Err(ErrorKind::UnknownElement)
+    }
+}
+
+fn parse_tags(parser: &mut EventReader<BufReader<File>>) -> Result<ElementData, ErrorKind> {
+    let mut tags = Vec::new();
+
+    loop {
+        let element = try!(parser.next());
+
+        match element {
+            XmlEvent::EndElement { name } => {
+                let element_type = try!(ElementType::from_str(&name.local_name));
+
+                match element_type {
+                    ElementType::Tag => continue,
+                    _ => return Ok(ElementData::Tags(tags))
+                }
+            },
+            XmlEvent::StartElement { name, attributes, .. } => {
+                let element_type = try!(ElementType::from_str(&name.local_name));
+
+                match element_type {
+                    ElementType::Tag => {
+                        let mut iter = attributes.iter();
+                        let tag = iter
+                            .find(|attr| attr.name.local_name == "k")
+                            .and_then(|attr| Some(attr.value.clone()))
+                            .and_then(|key| {
+                                iter.find(|attr| attr.name.local_name == "v")
+                                .and_then(|attr| Some(attr.value.clone()))
+                                .and_then(|val| Some((key, val)))
+                            });
+
+                        if let Some(t) = tag {
+                            tags.push(t);
+                        }
+                    },
+                    _ => continue
+                }
+            },
+            _ => continue
+        }
     }
 }
 
@@ -163,10 +231,10 @@ fn parse_node_attributes(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Err
     let lat = try!(find_attribute("lat", attrs).map_err(ErrorKind::CoordinateMissing));
     let lon = try!(find_attribute("lon", attrs).map_err(ErrorKind::CoordinateMissing));
 
-    Ok(ElementData::Node(id, lat, lon))
+    Ok(ElementData::NodeAttrs(id, lat, lon))
 }
 
-fn find_attribute<T>( name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, AttributeError>
+fn find_attribute<T>(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, AttributeError>
     where AttributeError: std::convert::From<<T as std::str::FromStr>::Err>,
           T: FromStr
 {

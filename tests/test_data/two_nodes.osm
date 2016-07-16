@@ -3,10 +3,10 @@
  <bounds minlat="54.0889580" minlon="12.2487570" maxlat="54.0913900" maxlon="12.2524800"/>
  <node id="25496583" lat="51.5173639" lon="-0.140043" version="1" changeset="203496" user="80n" uid="1238" visible="true" timestamp="2007-01-28T11:40:26Z">
   <tag k="highway" v="traffic_signals"/>
+  <tag k="test_key" v="test_value"/>
  </node>
 
  <node id="25496584" lat="51.5173640" lon="-0.140041" version="1" changeset="203496" user="80n" uid="1238" visible="true" timestamp="2007-01-28T11:40:26Z">
-  <tag k="highway" v="traffic_signals"/>
  </node>
 
 </osm>

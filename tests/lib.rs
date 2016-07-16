@@ -36,7 +36,7 @@ fn no_nodes() {
 }
 
 #[test]
-fn node_existance() {
+fn node_existence() {
     let f = File::open("./tests/test_data/two_nodes.osm").unwrap();
     let osm = OSM::parse(f).unwrap();
     assert_eq!(osm.nodes.len(), 2);
@@ -58,4 +58,22 @@ fn node_coordinates() {
     assert_eq!(osm.nodes[0].lon, -0.140043);
     assert_eq!(osm.nodes[1].lat, 51.5173640);
     assert_eq!(osm.nodes[1].lon, -0.140041);
+}
+
+#[test]
+fn node_tag_existence() {
+    let f = File::open("./tests/test_data/two_nodes.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+    assert_eq!(osm.nodes[0].tags.len(), 2);
+    assert_eq!(osm.nodes[1].tags.len(), 0);
+}
+
+#[test]
+fn node_tag_contents() {
+    let f = File::open("./tests/test_data/two_nodes.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+    assert_eq!(osm.nodes[0].tags[0].key, "highway".to_string());
+    assert_eq!(osm.nodes[0].tags[0].val, "traffic_signals".to_string());
+    assert_eq!(osm.nodes[0].tags[1].key, "test_key".to_string());
+    assert_eq!(osm.nodes[0].tags[1].val, "test_value".to_string());
 }
