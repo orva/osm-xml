@@ -3,10 +3,13 @@ extern crate xml;
 use std::fs::File;
 use std::io::BufReader;
 use std::str::FromStr;
-use std::num;
 
 use xml::reader::{EventReader, XmlEvent};
 use xml::attribute::OwnedAttribute;
+
+mod error;
+use error::{ErrorKind, AttributeError};
+
 
 pub type Coordinate = f64;
 
@@ -85,40 +88,6 @@ impl OSM {
     }
 }
 
-#[derive(Debug)]
-enum ErrorKind {
-    BoundsMissing(AttributeError),
-    IdMissing(AttributeError),
-    CoordinateMissing(AttributeError),
-    UnknownElement,
-    XmlParseError(xml::reader::Error)
-}
-
-#[derive(Debug)]
-enum AttributeError {
-    ParseFloat(num::ParseFloatError),
-    ParseInt(num::ParseIntError),
-    Missing
-}
-
-impl From<num::ParseFloatError> for AttributeError {
-    fn from(err: num::ParseFloatError) -> AttributeError {
-        AttributeError::ParseFloat(err)
-    }
-}
-
-impl From<num::ParseIntError> for AttributeError {
-    fn from(err: num::ParseIntError) -> AttributeError {
-        AttributeError::ParseInt(err)
-    }
-}
-
-impl From<xml::reader::Error> for ErrorKind {
-    fn from(err: xml::reader::Error) -> ErrorKind {
-        ErrorKind::XmlParseError(err)
-    }
-}
-
 enum ElementType {
     Bounds,
     Node,
@@ -163,7 +132,6 @@ impl FromStr for ElementType {
         Err(ErrorKind::UnknownElement)
     }
 }
-
 
 fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<ElementData, ErrorKind> {
     let element = try!(parser.next());
