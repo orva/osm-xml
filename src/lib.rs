@@ -50,27 +50,38 @@ impl OSM {
         let mut osm = OSM::empty();
 
         let reader = BufReader::new(file);
-        let parser = EventReader::new(reader);
+        let mut parser = EventReader::new(reader);
 
-        for element in parser {
-            match element {
-                Ok(XmlEvent::StartElement { name, attributes, .. }) => {
-                    match ElementType::from_str(&name.local_name) {
-                        Ok(element) => {
-                            match element {
-                                ElementType::Bounds => set_bounds(&mut osm, &attributes),
-                                ElementType::Node => insert_node(&mut osm, &attributes),
-                                _ => ()
-                            }
+        loop {
+            match parse_element_data(&mut parser) {
+                Err(ErrorKind::UnknownElement) => continue,
+                Err(ErrorKind::BoundsMissing(_)) => osm.bounds = None,
+                Err(_) => return None,
+                Ok(data) => {
+                    match data {
+                        ElementData::EndOfDocument => return Some(osm),
+                        ElementData::Ignored => continue,
+                        ElementData::Bounds(minlat, minlon, maxlat, maxlon) => {
+                            osm.bounds = Some(Bounds {
+                                minlat: minlat,
+                                minlon: minlon,
+                                maxlat: maxlat,
+                                maxlon: maxlon
+                            });
                         },
-                        Err(_) => ()
+                        ElementData::Node(id, lat, lon) => {
+                            osm.nodes.push(Node {
+                                id: id,
+                                lat: lat,
+                                lon: lon,
+                                tags: Vec::new()
+                            });
+                        },
+                        _ => ()
                     }
-                },
-                _ => { }
+                }
             }
         }
-
-        Some(osm)
     }
 }
 
@@ -79,7 +90,8 @@ enum ErrorKind {
     BoundsMissing(AttributeError),
     IdMissing(AttributeError),
     CoordinateMissing(AttributeError),
-    UnknownElement
+    UnknownElement,
+    XmlParseError(xml::reader::Error)
 }
 
 #[derive(Debug)]
@@ -101,12 +113,28 @@ impl From<num::ParseIntError> for AttributeError {
     }
 }
 
-#[allow(dead_code)]
+impl From<xml::reader::Error> for ErrorKind {
+    fn from(err: xml::reader::Error) -> ErrorKind {
+        ErrorKind::XmlParseError(err)
+    }
+}
+
 enum ElementType {
     Bounds,
     Node,
     Way,
-    Relation
+    Relation,
+    Tag
+}
+
+enum ElementData {
+    Bounds(f64, f64, f64, f64),
+    Node(i64, f64, f64),
+    Tag(String, String),
+    // These two are here so we can terminate and skip uninteresting data without
+    // using error handling.
+    EndOfDocument,
+    Ignored
 }
 
 
@@ -136,45 +164,38 @@ impl FromStr for ElementType {
     }
 }
 
-fn set_bounds(osm: &mut OSM, attrs: &Vec<OwnedAttribute>) {
-    match parse_bounds(&attrs) {
-        Ok(bounds) => osm.bounds = Some(bounds),
-        Err(_) => osm.bounds = None
+
+fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<ElementData, ErrorKind> {
+    let element = try!(parser.next());
+    match element {
+        XmlEvent::EndDocument => Ok(ElementData::EndOfDocument),
+        XmlEvent::StartElement { name, attributes, .. } => {
+            let element_type = try!(ElementType::from_str(&name.local_name));
+            match element_type {
+                ElementType::Bounds => parse_bounds(&attributes),
+                ElementType::Node => parse_node_attributes(&attributes),
+                _ => Err(ErrorKind::UnknownElement)
+            }
+        },
+        _ => Ok(ElementData::Ignored)
     }
 }
 
-fn insert_node(osm: &mut OSM, attrs: &Vec<OwnedAttribute>) {
-    match parse_node(&attrs) {
-        Ok(node) => osm.nodes.push(node),
-        Err(_) => ()
-    }
-}
-
-fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<Bounds, ErrorKind> {
+fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
     let minlat = try!(find_attribute("minlat", attrs).map_err(ErrorKind::BoundsMissing));
     let minlon = try!(find_attribute("minlon", attrs).map_err(ErrorKind::BoundsMissing));
     let maxlat = try!(find_attribute("maxlat", attrs).map_err(ErrorKind::BoundsMissing));
     let maxlon = try!(find_attribute("maxlon", attrs).map_err(ErrorKind::BoundsMissing));
 
-    Ok(Bounds {
-        minlat: minlat,
-        minlon: minlon,
-        maxlat: maxlat,
-        maxlon: maxlon,
-    })
+    Ok(ElementData::Bounds(minlat, minlon, maxlat, maxlon))
 }
 
-fn parse_node(attrs: &Vec<OwnedAttribute>) -> Result<Node, ErrorKind> {
+fn parse_node_attributes(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
     let id = try!(find_attribute("id", attrs).map_err(ErrorKind::IdMissing));
-    let lon = try!(find_attribute("lon", attrs).map_err(ErrorKind::CoordinateMissing));
     let lat = try!(find_attribute("lat", attrs).map_err(ErrorKind::CoordinateMissing));
+    let lon = try!(find_attribute("lon", attrs).map_err(ErrorKind::CoordinateMissing));
 
-    Ok(Node {
-        id: id,
-        lon: lon,
-        lat: lat,
-        tags: Vec::new()
-    })
+    Ok(ElementData::Node(id, lat, lon))
 }
 
 fn find_attribute<T>( name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, AttributeError>
