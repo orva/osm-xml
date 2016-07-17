@@ -18,10 +18,18 @@
   <node id="25496586" lat="51.5173641" lon="-0.140042" version="1" changeset="203496" user="80n" uid="1238" visible="true" timestamp="2007-01-28T11:40:26Z">
     <tag k="test_key" v="mango"/>
   </node>
+
+  <!-- valid element with some invalid tags -->
+  <node id="25496587" lat="51.5173641" lon="-0.140042" version="1" changeset="203496" user="80n" uid="1238" visible="true" timestamp="2007-01-28T11:40:26Z">
+    <tag k="test_key" v="mango"/>
+    <tag v="missing_key"/>
+    <tag k="missgin_value"/>
+  </node>
+
   <!--  Valid elements end -->
 
 
-  <node id="25496587" lat="51.5173641" lon="-0.140042" version="1" changeset="203496" user="80n" uid="1238" visible="true" timestamp="2007-01-28T11:40:26Z">
+  <node id="25496588" lat="51.5173641" lon="-0.140042" version="1" changeset="203496" user="80n" uid="1238" visible="true" timestamp="2007-01-28T11:40:26Z">
     <tag k="test_key" v="mango"/>
     <way id="5090250" visible="true" timestamp="2009-01-19T19:07:25Z" version="8" changeset="816806" user="Blumpsy" uid="64226">
       <nd ref="25496585"/>

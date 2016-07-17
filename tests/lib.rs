@@ -61,6 +61,35 @@ fn node_coordinates() {
 }
 
 #[test]
+fn skip_only_malformed_nodes() {
+    let f = File::open("./tests/test_data/invalid_nodes.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+    assert_eq!(osm.nodes.len(), 3);
+
+    let node = osm.nodes.iter().find(|n| n.id == 25496585);
+    assert!(node.is_some());
+    let node = osm.nodes.iter().find(|n| n.id == 25496586);
+    assert!(node.is_some());
+    let node = osm.nodes.iter().find(|n| n.id == 25496587);
+    assert!(node.is_some());
+}
+
+#[test]
+fn skip_malformed_node_with_child_node() {
+    let f = File::open("./tests/test_data/invalid_nodes.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+    assert_eq!(osm.nodes.iter().find(|n| n.id == 25496583), None);
+    assert_eq!(osm.nodes.iter().find(|n| n.id == 25496584), None);
+}
+
+#[test]
+fn skip_malformed_node_with_child_way() {
+    let f = File::open("./tests/test_data/invalid_nodes.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+    assert_eq!(osm.nodes.iter().find(|n| n.id == 25496588), None);
+}
+
+#[test]
 fn node_tag_existence() {
     let f = File::open("./tests/test_data/two_nodes.osm").unwrap();
     let osm = OSM::parse(f).unwrap();
@@ -78,29 +107,12 @@ fn node_tag_contents() {
     assert_eq!(osm.nodes[0].tags[1].val, "test_value".to_string());
 }
 
-#[test]
-fn skip_only_malformed_nodes() {
-    let f = File::open("./tests/test_data/invalid_nodes.osm").unwrap();
-    let osm = OSM::parse(f).unwrap();
-    assert_eq!(osm.nodes.len(), 2);
-
-    let node = osm.nodes.iter().find(|n| n.id == 25496585);
-    assert!(node.is_some());
-    let node = osm.nodes.iter().find(|n| n.id == 25496586);
-    assert!(node.is_some());
-}
 
 #[test]
-fn skip_malformed_node_with_child_node() {
+fn skip_malformed_node_tags() {
     let f = File::open("./tests/test_data/invalid_nodes.osm").unwrap();
     let osm = OSM::parse(f).unwrap();
-    assert_eq!(osm.nodes.iter().find(|n| n.id == 25496583), None);
-    assert_eq!(osm.nodes.iter().find(|n| n.id == 25496584), None);
-}
 
-#[test]
-fn skip_malformed_node_with_child_way() {
-    let f = File::open("./tests/test_data/invalid_nodes.osm").unwrap();
-    let osm = OSM::parse(f).unwrap();
-    assert_eq!(osm.nodes.iter().find(|n| n.id == 25496587), None);
+    let node = osm.nodes.iter().find(|n| n.id == 25496587);
+    assert_eq!(node.unwrap().tags.len(), 1);
 }
