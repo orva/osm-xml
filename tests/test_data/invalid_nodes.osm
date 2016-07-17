@@ -9,8 +9,27 @@
   </node>
  </node>
 
+
+  <!--  Valid elements start -->
   <node id="25496585" lat="51.5173641" lon="-0.140042" version="1" changeset="203496" user="80n" uid="1238" visible="true" timestamp="2007-01-28T11:40:26Z">
     <tag k="test_key" v="banana"/>
+  </node>
+
+  <node id="25496586" lat="51.5173641" lon="-0.140042" version="1" changeset="203496" user="80n" uid="1238" visible="true" timestamp="2007-01-28T11:40:26Z">
+    <tag k="test_key" v="mango"/>
+  </node>
+  <!--  Valid elements end -->
+
+
+  <node id="25496587" lat="51.5173641" lon="-0.140042" version="1" changeset="203496" user="80n" uid="1238" visible="true" timestamp="2007-01-28T11:40:26Z">
+    <tag k="test_key" v="mango"/>
+    <way id="5090250" visible="true" timestamp="2009-01-19T19:07:25Z" version="8" changeset="816806" user="Blumpsy" uid="64226">
+      <nd ref="25496585"/>
+      <nd ref="25496586"/>
+      <tag k="highway" v="residential"/>
+      <tag k="name" v="Clipstone Street"/>
+      <tag k="oneway" v="yes"/>
+    </way>
   </node>
 </osm>
 

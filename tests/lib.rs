@@ -79,11 +79,28 @@ fn node_tag_contents() {
 }
 
 #[test]
-fn malformed_node_with_child_node() {
-    let f = File::open("./tests/test_data/recursive_nodes.osm").unwrap();
+fn skip_only_malformed_nodes() {
+    let f = File::open("./tests/test_data/invalid_nodes.osm").unwrap();
     let osm = OSM::parse(f).unwrap();
-    assert_eq!(osm.nodes.len(), 1);
-    assert_eq!(osm.nodes[0].id, 25496585);
-    assert_eq!(osm.nodes[0].tags[0].key, "test_key".to_string());
-    assert_eq!(osm.nodes[0].tags[0].val, "banana".to_string());
+    assert_eq!(osm.nodes.len(), 2);
+
+    let node = osm.nodes.iter().find(|n| n.id == 25496585);
+    assert!(node.is_some());
+    let node = osm.nodes.iter().find(|n| n.id == 25496586);
+    assert!(node.is_some());
+}
+
+#[test]
+fn skip_malformed_node_with_child_node() {
+    let f = File::open("./tests/test_data/invalid_nodes.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+    assert_eq!(osm.nodes.iter().find(|n| n.id == 25496583), None);
+    assert_eq!(osm.nodes.iter().find(|n| n.id == 25496584), None);
+}
+
+#[test]
+fn skip_malformed_node_with_child_way() {
+    let f = File::open("./tests/test_data/invalid_nodes.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+    assert_eq!(osm.nodes.iter().find(|n| n.id == 25496587), None);
 }
