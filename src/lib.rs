@@ -12,6 +12,7 @@ use error::{ErrorKind, AttributeError};
 
 
 pub type Coordinate = f64;
+pub type Id = i64;
 
 #[derive(Debug, PartialEq)]
 pub struct Tag {
@@ -98,9 +99,9 @@ enum ElementType {
 }
 
 enum ElementData {
-    Bounds(f64, f64, f64, f64),
-    NodeAttrs(i64, f64, f64),
-    Node(i64, f64, f64, Vec<Tag>),
+    Bounds(Coordinate, Coordinate, Coordinate, Coordinate),
+    NodeAttrs(Id, Coordinate, Coordinate),
+    Node(Id, Coordinate, Coordinate, Vec<Tag>),
     // These two are here so we can terminate and skip uninteresting data without
     // using error handling.
     EndOfDocument,

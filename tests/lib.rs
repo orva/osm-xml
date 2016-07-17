@@ -107,7 +107,6 @@ fn node_tag_contents() {
     assert_eq!(osm.nodes[0].tags[1].val, "test_value".to_string());
 }
 
-
 #[test]
 fn skip_malformed_node_tags() {
     let f = File::open("./tests/test_data/invalid_nodes.osm").unwrap();
