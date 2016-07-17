@@ -77,9 +77,7 @@ impl OSM {
                                 id: id,
                                 lat: lat,
                                 lon: lon,
-                                tags: tags.into_iter()
-                                        .map(|t| Tag { key: t.0, val: t.1 })
-                                        .collect()
+                                tags: tags
                             });
                         },
                         _ => ()
@@ -101,8 +99,8 @@ enum ElementType {
 enum ElementData {
     Bounds(f64, f64, f64, f64),
     NodeAttrs(i64, f64, f64),
-    Node(i64, f64, f64, Vec<(String, String)>),
-    Tags(Vec<(String, String)>),
+    Node(i64, f64, f64, Vec<Tag>),
+    Tags(Vec<Tag>),
     // These two are here so we can terminate and skip uninteresting data without
     // using error handling.
     EndOfDocument,
@@ -157,7 +155,6 @@ fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<Eleme
     }
 }
 
-
 fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
     let node_attrs = try!(parse_node_attributes(&attrs));
     let wrapped_tags = try!(parse_tags(parser));
@@ -195,18 +192,8 @@ fn parse_tags(parser: &mut EventReader<BufReader<File>>) -> Result<ElementData, 
 
                 match element_type {
                     ElementType::Tag => {
-                        let mut iter = attributes.iter();
-                        let tag = iter
-                            .find(|attr| attr.name.local_name == "k")
-                            .and_then(|attr| Some(attr.value.clone()))
-                            .and_then(|key| {
-                                iter.find(|attr| attr.name.local_name == "v")
-                                .and_then(|attr| Some(attr.value.clone()))
-                                .and_then(|val| Some((key, val)))
-                            });
-
-                        if let Some(t) = tag {
-                            tags.push(t);
+                        if let Some(tag) = parse_tag_attributes(&attributes) {
+                            tags.push(tag);
                         }
                     },
                     _ => continue
@@ -215,6 +202,17 @@ fn parse_tags(parser: &mut EventReader<BufReader<File>>) -> Result<ElementData, 
             _ => continue
         }
     }
+}
+
+fn parse_tag_attributes(attributes: &Vec<OwnedAttribute>) -> Option<Tag> {
+    let mut iter = attributes.iter();
+    iter.find(|attr| attr.name.local_name == "k")
+        .and_then(|attr| Some(attr.value.clone()))
+        .and_then(|key| {
+            iter.find(|attr| attr.name.local_name == "v")
+            .and_then(|attr| Some(attr.value.clone()))
+            .and_then(|val| Some(Tag { key: key, val: val }))
+        })
 }
 
 fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
