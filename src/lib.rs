@@ -58,6 +58,7 @@ impl OSM {
         loop {
             match parse_element_data(&mut parser) {
                 Err(ErrorKind::UnknownElement) => continue,
+                Err(ErrorKind::MalformedElement) => continue,
                 Err(ErrorKind::BoundsMissing(_)) => osm.bounds = None,
                 Err(_) => return None,
                 Ok(data) => {
@@ -100,7 +101,6 @@ enum ElementData {
     Bounds(f64, f64, f64, f64),
     NodeAttrs(i64, f64, f64),
     Node(i64, f64, f64, Vec<Tag>),
-    Tags(Vec<Tag>),
     // These two are here so we can terminate and skip uninteresting data without
     // using error handling.
     EndOfDocument,
@@ -157,50 +157,40 @@ fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<Eleme
 
 fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
     let node_attrs = try!(parse_node_attributes(&attrs));
-    let wrapped_tags = try!(parse_tags(parser));
 
-    match node_attrs {
-        ElementData::NodeAttrs(id, lat, lon) => {
-            let tags = match wrapped_tags {
-                ElementData::Tags(tag_arr) => tag_arr,
-                _ => Vec::new()
-            };
+    if let ElementData::NodeAttrs(id, lat, lon) = node_attrs {
+        let mut tags = Vec::new();
 
-            Ok(ElementData::Node(id, lat, lon, tags))
-        },
-        _ => Err(ErrorKind::UnknownElement)
-    }
-}
+        // Parse Node child elements, if any
+        loop {
+            match try!(parser.next()) {
+                XmlEvent::EndElement { name } => {
+                    let element_type = try!(ElementType::from_str(&name.local_name));
 
-fn parse_tags(parser: &mut EventReader<BufReader<File>>) -> Result<ElementData, ErrorKind> {
-    let mut tags = Vec::new();
+                    match element_type {
+                        ElementType::Node => return Ok(ElementData::Node(id, lat, lon, tags)),
+                        _ => continue
+                    }
+                },
+                XmlEvent::StartElement { name, attributes, .. } => {
+                    let element_type = try!(ElementType::from_str(&name.local_name));
 
-    loop {
-        let element = try!(parser.next());
-
-        match element {
-            XmlEvent::EndElement { name } => {
-                let element_type = try!(ElementType::from_str(&name.local_name));
-
-                match element_type {
-                    ElementType::Tag => continue,
-                    _ => return Ok(ElementData::Tags(tags))
-                }
-            },
-            XmlEvent::StartElement { name, attributes, .. } => {
-                let element_type = try!(ElementType::from_str(&name.local_name));
-
-                match element_type {
-                    ElementType::Tag => {
-                        if let Some(tag) = parse_tag_attributes(&attributes) {
-                            tags.push(tag);
-                        }
-                    },
-                    _ => continue
-                }
-            },
-            _ => continue
+                    match element_type {
+                        ElementType::Tag => {
+                            if let Some(tag) = parse_tag_attributes(&attributes) {
+                                tags.push(tag);
+                            }
+                        },
+                        // Malformed node containing child Nodes, ignore whole Node
+                        ElementType::Node => return Err(ErrorKind::MalformedElement),
+                        _ => continue
+                    }
+                },
+                _ => continue
+            }
         }
+    } else {
+        Err(ErrorKind::MalformedElement)
     }
 }
 

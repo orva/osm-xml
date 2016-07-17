@@ -77,3 +77,13 @@ fn node_tag_contents() {
     assert_eq!(osm.nodes[0].tags[1].key, "test_key".to_string());
     assert_eq!(osm.nodes[0].tags[1].val, "test_value".to_string());
 }
+
+#[test]
+fn malformed_node_with_child_node() {
+    let f = File::open("./tests/test_data/recursive_nodes.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+    assert_eq!(osm.nodes.len(), 1);
+    assert_eq!(osm.nodes[0].id, 25496585);
+    assert_eq!(osm.nodes[0].tags[0].key, "test_key".to_string());
+    assert_eq!(osm.nodes[0].tags[0].val, "banana".to_string());
+}
