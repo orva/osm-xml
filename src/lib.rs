@@ -182,10 +182,10 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
                             }
                         },
                         // Malformed node containing illegal children, ignore whole Node
+                        ElementType::Bounds |
                         ElementType::Node |
                         ElementType::Relation |
-                        ElementType::Way => return Err(ErrorKind::MalformedElement),
-                        _ => continue
+                        ElementType::Way => return Err(ErrorKind::MalformedElement)
                     }
                 },
                 _ => continue
