@@ -95,13 +95,15 @@ enum ElementType {
     Node,
     Way,
     Relation,
-    Tag
+    Tag,
+    NodeRef,
 }
 
 enum ElementData {
     Bounds(Coordinate, Coordinate, Coordinate, Coordinate),
     NodeAttrs(Id, Coordinate, Coordinate),
     Node(Id, Coordinate, Coordinate, Vec<Tag>),
+    Way(Id, Vec<Id>, Vec<Tag>),
     // These two are here so we can terminate and skip uninteresting data without
     // using error handling.
     EndOfDocument,
@@ -135,6 +137,10 @@ impl FromStr for ElementType {
             return Ok(ElementType::Tag);
         }
 
+        if downcased == "nd" {
+            return Ok(ElementType::NodeRef);
+        }
+
         Err(ErrorKind::UnknownElement)
     }
 }
@@ -149,11 +155,54 @@ fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<Eleme
             match element_type {
                 ElementType::Bounds => parse_bounds(&attributes),
                 ElementType::Node => parse_node(parser, &attributes),
+                ElementType::Way => parse_way(parser, &attributes),
                 _ => Err(ErrorKind::UnknownElement)
             }
         },
         _ => Ok(ElementData::Ignored)
     }
+}
+
+fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
+    let id = try!(find_attribute("id", attrs).map_err(ErrorKind::IdMissing));
+
+    let mut node_refs = Vec::new();
+    let mut tags = Vec::new();
+
+    loop {
+        match try!(parser.next()) {
+            XmlEvent::EndElement { name } => {
+                let element_type = try!(ElementType::from_str(&name.local_name));
+
+                match element_type {
+                    ElementType::Way => return Ok(ElementData::Way(id, node_refs, tags)),
+                    _ => continue
+                }
+            },
+            XmlEvent::StartElement { name, attributes, .. } => {
+                let element_type = try!(ElementType::from_str(&name.local_name));
+
+                match element_type {
+                    ElementType::Tag => {
+                        if let Some(tag) = parse_tag_attributes(&attributes) {
+                            tags.push(tag);
+                        }
+                    },
+                    ElementType::NodeRef => {
+                        let node_ref = try!(find_attribute("ref", &attributes).map_err(ErrorKind::IdMissing));
+                        node_refs.push(node_ref);
+                    },
+                    // Malformed node containing illegal children, ignore whole Node
+                    ElementType::Bounds |
+                    ElementType::Node |
+                    ElementType::Relation |
+                    ElementType::Way => return Err(ErrorKind::MalformedElement)
+                }
+            },
+            _ => continue
+        }
+    }
+
 }
 
 fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
@@ -186,7 +235,8 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
                         ElementType::Bounds |
                         ElementType::Node |
                         ElementType::Relation |
-                        ElementType::Way => return Err(ErrorKind::MalformedElement)
+                        ElementType::Way |
+                        ElementType::NodeRef => return Err(ErrorKind::MalformedElement)
                     }
                 },
                 _ => continue
