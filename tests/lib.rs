@@ -121,4 +121,52 @@ fn way_existence() {
     let f = File::open("./tests/test_data/way.osm").unwrap();
     let osm = OSM::parse(f).unwrap();
     assert_eq!(osm.ways.len(), 1);
+    assert_eq!(osm.ways[0].id, 4253174);
 }
+
+#[test]
+fn way_tags() {
+    let f = File::open("./tests/test_data/way.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    assert_eq!(osm.ways[0].tags.len(), 11);
+    assert_eq!(osm.ways[0].tags[0].key, "highway".to_string());
+    assert_eq!(osm.ways[0].tags[0].val, "residential".to_string());
+    assert_eq!(osm.ways[0].tags[1].key, "lanes".to_string());
+    assert_eq!(osm.ways[0].tags[1].val, "1".to_string());
+    assert_eq!(osm.ways[0].tags[2].key, "lit".to_string());
+    assert_eq!(osm.ways[0].tags[2].val, "yes".to_string());
+    assert_eq!(osm.ways[0].tags[3].key, "maxspeed".to_string());
+    assert_eq!(osm.ways[0].tags[3].val, "30".to_string());
+    assert_eq!(osm.ways[0].tags[4].key, "name".to_string());
+    assert_eq!(osm.ways[0].tags[4].val, "Maurinkatu".to_string());
+    assert_eq!(osm.ways[0].tags[5].key, "name:fi".to_string());
+    assert_eq!(osm.ways[0].tags[5].val, "Maurinkatu".to_string());
+    assert_eq!(osm.ways[0].tags[6].key, "name:sv".to_string());
+    assert_eq!(osm.ways[0].tags[6].val, "Mauritzgatan".to_string());
+    assert_eq!(osm.ways[0].tags[7].key, "old_name:fi".to_string());
+    assert_eq!(osm.ways[0].tags[7].val, "Mauritsinkatu".to_string());
+    assert_eq!(osm.ways[0].tags[8].key, "snowplowing".to_string());
+    assert_eq!(osm.ways[0].tags[8].val, "yes".to_string());
+    assert_eq!(osm.ways[0].tags[9].key, "start_date".to_string());
+    assert_eq!(osm.ways[0].tags[9].val, "before 1815".to_string());
+    assert_eq!(osm.ways[0].tags[10].key, "surface".to_string());
+    assert_eq!(osm.ways[0].tags[10].val, "paved".to_string());
+}
+
+#[test]
+fn way_node_references() {
+    let f = File::open("./tests/test_data/way.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    let nodes = osm.nodes_for(&osm.ways[0]);
+    assert_eq!(nodes.len(), 7);
+    assert_eq!(nodes[0].id, 1375815878);
+    assert_eq!(nodes[1].id, 391448656);
+    assert_eq!(nodes[2].id, 340886677);
+    assert_eq!(nodes[3].id, 1651393269);
+    assert_eq!(nodes[4].id, 471408613);
+    assert_eq!(nodes[5].id, 25470395);
+    assert_eq!(nodes[6].id, 1376857625);
+}
+

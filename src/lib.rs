@@ -104,6 +104,12 @@ impl OSM {
             }
         }
     }
+
+    pub fn nodes_for(&self, way: &Way) -> Vec<&Node> {
+        way.node_ids.iter()
+            .map(|id| self.nodes.iter().find(|node| node.id == *id).unwrap())
+            .collect()
+    }
 }
 
 enum ElementType {
