@@ -206,7 +206,7 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribu
 
                 match element_type {
                     ElementType::Tag => {
-                        if let Ok(tag) = parse_tag_attributes(&attributes) {
+                        if let Ok(tag) = parse_tag(&attributes) {
                             tags.push(tag);
                         }
                     },
@@ -250,7 +250,7 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
 
                 match element_type {
                     ElementType::Tag => {
-                        if let Ok(tag) = parse_tag_attributes(&attributes) {
+                        if let Ok(tag) = parse_tag(&attributes) {
                             tags.push(tag);
                         }
                     },
@@ -268,7 +268,7 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
     }
 }
 
-fn parse_tag_attributes(attributes: &Vec<OwnedAttribute>) -> Result<Tag, ErrorKind> {
+fn parse_tag(attributes: &Vec<OwnedAttribute>) -> Result<Tag, ErrorKind> {
     let key = try!(find_attribute_uncasted("k", attributes).map_err(ErrorKind::MalformedTag));
     let val = try!(find_attribute_uncasted("v", attributes).map_err(ErrorKind::MalformedTag));
     Ok(Tag { key: key, val: val })
