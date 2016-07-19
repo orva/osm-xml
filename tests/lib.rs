@@ -115,3 +115,10 @@ fn skip_malformed_node_tags() {
     let node = osm.nodes.iter().find(|n| n.id == 25496587);
     assert_eq!(node.unwrap().tags.len(), 1);
 }
+
+#[test]
+fn way_existence() {
+    let f = File::open("./tests/test_data/way.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+    assert_eq!(osm.ways.len(), 1);
+}

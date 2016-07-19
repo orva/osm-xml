@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="CGImap 0.4.0 (15910 thorn-04.openstreetmap.org)" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">
+ <bounds minlat="60.1670000" minlon="24.9498000" maxlat="60.1778000" maxlon="24.9698000"/>
+
+ <node id="1375815878" visible="true" version="1" changeset="8845283"  timestamp="2011-07-27T14:15:02Z" user="Daeron" uid="38239"  lat="60.1757315" lon="24.9595858"/>
+ <node id="391448656" visible="true" version="6" changeset="9072583" timestamp="2011-08-20T09:38:48Z" user="alv" uid="4660" lat="60.1756727" lon="24.9596021">
+  <tag k="crossing" v="uncontrolled"/>
+  <tag k="highway" v="crossing"/>
+ </node>
+ <node id="340886677"  visible="true" version="4" changeset="6532324"  timestamp="2010-12-03T22:20:34Z" user="Daeron" uid="38239"  lat="60.1755020" lon="24.9596227"/>
+ <node id="1651393269" visible="true" version="1" changeset="10817661" timestamp="2012-02-28T11:08:30Z" user="ij_"    uid="139957" lat="60.1753460" lon="24.9596395"/>
+ <node id="471408613" visible="true" version="2" changeset="6532324" timestamp="2010-12-03T22:20:23Z" user="Daeron" uid="38239" lat="60.1751017" lon="24.9596659">
+  <tag k="crossing" v="uncontrolled"/>
+  <tag k="highway" v="crossing"/>
+ </node>
+ <node id="25470395"   visible="true" version="6" changeset="6532324"  timestamp="2010-12-03T22:20:32Z" user="Daeron" uid="38239"  lat="60.1750558" lon="24.9596704"/>
+ <node id="1376857625" visible="true" version="1" changeset="8856146"  timestamp="2011-07-28T16:28:20Z" user="alv"    uid="4660"   lat="60.1749801" lon="24.9596797"/>
+
+ <way id="4253174" visible="true" version="19" changeset="20627130" timestamp="2014-02-17T23:43:30Z" user="ij_" uid="139957">
+  <nd ref="1375815878"/>
+  <nd ref="391448656"/>
+  <nd ref="340886677"/>
+  <nd ref="1651393269"/>
+  <nd ref="471408613"/>
+  <nd ref="25470395"/>
+  <nd ref="1376857625"/>
+  <tag k="highway" v="residential"/>
+  <tag k="lanes" v="1"/>
+  <tag k="lit" v="yes"/>
+  <tag k="maxspeed" v="30"/>
+  <tag k="name" v="Maurinkatu"/>
+  <tag k="name:fi" v="Maurinkatu"/>
+  <tag k="name:sv" v="Mauritzgatan"/>
+  <tag k="old_name:fi" v="Mauritsinkatu"/>
+  <tag k="snowplowing" v="yes"/>
+  <tag k="start_date" v="before 1815"/>
+  <tag k="surface" v="paved"/>
+ </way>
+</osm>

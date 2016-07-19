@@ -36,10 +36,18 @@ pub struct Node {
     pub tags: Vec<Tag>
 }
 
+#[derive(Debug, PartialEq)]
+pub struct Way {
+    pub id: i64,
+    pub tags: Vec<Tag>,
+    node_ids: Vec<Id>
+}
+
 #[derive(Debug)]
 pub struct OSM {
     pub bounds: Option<Bounds>,
-    pub nodes: Vec<Node>
+    pub nodes: Vec<Node>,
+    pub ways: Vec<Way>
 }
 
 impl OSM {
@@ -47,6 +55,7 @@ impl OSM {
         OSM {
             bounds: None,
             nodes: Vec::new(),
+            ways: Vec::new()
         }
     }
 
@@ -82,6 +91,13 @@ impl OSM {
                                 tags: tags
                             });
                         },
+                        ElementData::Way(id, node_ids, tags) => {
+                            osm.ways.push(Way {
+                                id: id,
+                                node_ids: node_ids,
+                                tags: tags
+                            });
+                        }
                         _ => ()
                     }
                 }
