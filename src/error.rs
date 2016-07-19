@@ -7,6 +7,7 @@ pub enum ErrorKind {
     BoundsMissing(AttributeError),
     IdMissing(AttributeError),
     CoordinateMissing(AttributeError),
+    MalformedTag(AttributeError),
     UnknownElement,
     MalformedElement,
     XmlParseError(xml::reader::Error)

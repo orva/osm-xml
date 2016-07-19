@@ -206,7 +206,7 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribu
 
                 match element_type {
                     ElementType::Tag => {
-                        if let Some(tag) = parse_tag_attributes(&attributes) {
+                        if let Ok(tag) = parse_tag_attributes(&attributes) {
                             tags.push(tag);
                         }
                     },
@@ -214,7 +214,6 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribu
                         let node_ref = try!(find_attribute("ref", &attributes).map_err(ErrorKind::IdMissing));
                         node_refs.push(node_ref);
                     },
-                    // Malformed node containing illegal children, ignore whole Node
                     ElementType::Bounds |
                     ElementType::Node |
                     ElementType::Relation |
@@ -233,7 +232,6 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
     if let ElementData::NodeAttrs(id, lat, lon) = node_attrs {
         let mut tags = Vec::new();
 
-        // Parse Node child elements, if any
         loop {
             match try!(parser.next()) {
                 XmlEvent::EndElement { name } => {
@@ -249,11 +247,10 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
 
                     match element_type {
                         ElementType::Tag => {
-                            if let Some(tag) = parse_tag_attributes(&attributes) {
+                            if let Ok(tag) = parse_tag_attributes(&attributes) {
                                 tags.push(tag);
                             }
                         },
-                        // Malformed node containing illegal children, ignore whole Node
                         ElementType::Bounds |
                         ElementType::Node |
                         ElementType::Relation |
@@ -269,15 +266,10 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
     }
 }
 
-fn parse_tag_attributes(attributes: &Vec<OwnedAttribute>) -> Option<Tag> {
-    let mut iter = attributes.iter();
-    iter.find(|attr| attr.name.local_name == "k")
-        .and_then(|attr| Some(attr.value.clone()))
-        .and_then(|key| {
-            iter.find(|attr| attr.name.local_name == "v")
-            .and_then(|attr| Some(attr.value.clone()))
-            .and_then(|val| Some(Tag { key: key, val: val }))
-        })
+fn parse_tag_attributes(attributes: &Vec<OwnedAttribute>) -> Result<Tag, ErrorKind> {
+    let key = try!(find_attribute_uncasted("k", attributes).map_err(ErrorKind::MalformedTag));
+    let val = try!(find_attribute_uncasted("v", attributes).map_err(ErrorKind::MalformedTag));
+    Ok(Tag { key: key, val: val })
 }
 
 fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
@@ -301,11 +293,16 @@ fn find_attribute<T>(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, Attri
     where AttributeError: std::convert::From<<T as std::str::FromStr>::Err>,
           T: FromStr
 {
+    let val_raw = try!(find_attribute_uncasted(name, attrs));
+    let val = try!(val_raw.parse::<T>());
+    Ok(val)
+}
+
+fn find_attribute_uncasted(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<String, AttributeError> {
     let attr = attrs.iter().find(|attr| attr.name.local_name == name);
     match attr {
         Some(a) => {
-            let val = try!(a.value.parse::<T>());
-            Ok(val)
+            Ok(a.value.clone())
         },
         None => Err(AttributeError::Missing)
     }
