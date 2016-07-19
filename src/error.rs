@@ -5,11 +5,10 @@ use std::num::{ParseFloatError, ParseIntError};
 #[derive(Debug)]
 pub enum ErrorKind {
     BoundsMissing(AttributeError),
-    IdMissing(AttributeError),
-    CoordinateMissing(AttributeError),
     MalformedTag(AttributeError),
+    MalformedNode(AttributeError),
+    MalformedWay(AttributeError),
     UnknownElement,
-    MalformedElement,
     XmlParseError(xml::reader::Error)
 }
 
@@ -17,6 +16,7 @@ pub enum ErrorKind {
 pub enum AttributeError {
     ParseFloat(ParseFloatError),
     ParseInt(ParseIntError),
+    IllegalNesting,
     Missing
 }
 

@@ -67,10 +67,12 @@ impl OSM {
 
         loop {
             match parse_element_data(&mut parser) {
-                Err(ErrorKind::UnknownElement) => continue,
-                Err(ErrorKind::MalformedElement) => continue,
+                Err(ErrorKind::XmlParseError(_)) => return None,
                 Err(ErrorKind::BoundsMissing(_)) => osm.bounds = None,
-                Err(_) => return None,
+                Err(ErrorKind::MalformedTag(_))  |
+                Err(ErrorKind::MalformedNode(_)) |
+                Err(ErrorKind::MalformedWay(_))  |
+                Err(ErrorKind::UnknownElement)   => continue,
                 Ok(data) => {
                     match data {
                         ElementData::EndOfDocument => return Some(osm),
@@ -98,7 +100,6 @@ impl OSM {
                                 tags: tags
                             });
                         }
-                        _ => ()
                     }
                 }
             }
@@ -123,7 +124,6 @@ enum ElementType {
 
 enum ElementData {
     Bounds(Coordinate, Coordinate, Coordinate, Coordinate),
-    NodeAttrs(Id, Coordinate, Coordinate),
     Node(Id, Coordinate, Coordinate, Vec<Tag>),
     Way(Id, Vec<Id>, Vec<Tag>),
     // These two are here so we can terminate and skip uninteresting data without
@@ -186,7 +186,7 @@ fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<Eleme
 }
 
 fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
-    let id = try!(find_attribute("id", attrs).map_err(ErrorKind::IdMissing));
+    let id = try!(find_attribute("id", attrs).map_err(ErrorKind::MalformedWay));
 
     let mut node_refs = Vec::new();
     let mut tags = Vec::new();
@@ -211,13 +211,15 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribu
                         }
                     },
                     ElementType::NodeRef => {
-                        let node_ref = try!(find_attribute("ref", &attributes).map_err(ErrorKind::IdMissing));
+                        let node_ref = try!(find_attribute("ref", &attributes).map_err(ErrorKind::MalformedWay));
                         node_refs.push(node_ref);
                     },
                     ElementType::Bounds |
                     ElementType::Node |
                     ElementType::Relation |
-                    ElementType::Way => return Err(ErrorKind::MalformedElement)
+                    ElementType::Way => return Err(
+                        ErrorKind::MalformedWay(AttributeError::IllegalNesting)
+                    )
                 }
             },
             _ => continue
@@ -227,42 +229,42 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribu
 }
 
 fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
-    let node_attrs = try!(parse_node_attributes(&attrs));
+    let id = try!(find_attribute("id", attrs).map_err(ErrorKind::MalformedNode));
+    let lat = try!(find_attribute("lat", attrs).map_err(ErrorKind::MalformedNode));
+    let lon = try!(find_attribute("lon", attrs).map_err(ErrorKind::MalformedNode));
 
-    if let ElementData::NodeAttrs(id, lat, lon) = node_attrs {
-        let mut tags = Vec::new();
+    let mut tags = Vec::new();
 
-        loop {
-            match try!(parser.next()) {
-                XmlEvent::EndElement { name } => {
-                    let element_type = try!(ElementType::from_str(&name.local_name));
+    loop {
+        match try!(parser.next()) {
+            XmlEvent::EndElement { name } => {
+                let element_type = try!(ElementType::from_str(&name.local_name));
 
-                    match element_type {
-                        ElementType::Node => return Ok(ElementData::Node(id, lat, lon, tags)),
-                        _ => continue
-                    }
-                },
-                XmlEvent::StartElement { name, attributes, .. } => {
-                    let element_type = try!(ElementType::from_str(&name.local_name));
+                match element_type {
+                    ElementType::Node => return Ok(ElementData::Node(id, lat, lon, tags)),
+                    _ => continue
+                }
+            },
+            XmlEvent::StartElement { name, attributes, .. } => {
+                let element_type = try!(ElementType::from_str(&name.local_name));
 
-                    match element_type {
-                        ElementType::Tag => {
-                            if let Ok(tag) = parse_tag_attributes(&attributes) {
-                                tags.push(tag);
-                            }
-                        },
-                        ElementType::Bounds |
-                        ElementType::Node |
-                        ElementType::Relation |
-                        ElementType::Way |
-                        ElementType::NodeRef => return Err(ErrorKind::MalformedElement)
-                    }
-                },
-                _ => continue
-            }
+                match element_type {
+                    ElementType::Tag => {
+                        if let Ok(tag) = parse_tag_attributes(&attributes) {
+                            tags.push(tag);
+                        }
+                    },
+                    ElementType::Bounds |
+                    ElementType::Node |
+                    ElementType::Relation |
+                    ElementType::Way |
+                    ElementType::NodeRef => return Err(
+                        ErrorKind::MalformedNode(AttributeError::IllegalNesting)
+                    )
+                }
+            },
+            _ => continue
         }
-    } else {
-        Err(ErrorKind::MalformedElement)
     }
 }
 
@@ -279,14 +281,6 @@ fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
     let maxlon = try!(find_attribute("maxlon", attrs).map_err(ErrorKind::BoundsMissing));
 
     Ok(ElementData::Bounds(minlat, minlon, maxlat, maxlon))
-}
-
-fn parse_node_attributes(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
-    let id = try!(find_attribute("id", attrs).map_err(ErrorKind::IdMissing));
-    let lat = try!(find_attribute("lat", attrs).map_err(ErrorKind::CoordinateMissing));
-    let lon = try!(find_attribute("lon", attrs).map_err(ErrorKind::CoordinateMissing));
-
-    Ok(ElementData::NodeAttrs(id, lat, lon))
 }
 
 fn find_attribute<T>(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, AttributeError>
