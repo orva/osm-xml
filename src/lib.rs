@@ -30,7 +30,7 @@ pub struct Bounds {
 
 #[derive(Debug, PartialEq)]
 pub struct Node {
-    pub id: i64,
+    pub id: Id,
     pub lat: Coordinate,
     pub lon: Coordinate,
     pub tags: Vec<Tag>
@@ -38,7 +38,7 @@ pub struct Node {
 
 #[derive(Debug, PartialEq)]
 pub struct Way {
-    pub id: i64,
+    pub id: Id,
     pub tags: Vec<Tag>,
     node_ids: Vec<Id>
 }
