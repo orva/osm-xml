@@ -41,7 +41,7 @@ pub struct Node {
 pub struct Way {
     pub id: Id,
     pub tags: Vec<Tag>,
-    node_ids: Vec<Id>
+    pub nodes: Vec<UnresolvedReference>
 }
 
 #[derive(Debug, PartialEq)]
@@ -126,10 +126,10 @@ impl OSM {
                                 tags: tags
                             });
                         },
-                        ElementData::Way(id, node_ids, tags) => {
+                        ElementData::Way(id, node_refs, tags) => {
                             osm.ways.push(Way {
                                 id: id,
-                                node_ids: node_ids,
+                                nodes: node_refs,
                                 tags: tags
                             });
                         },
@@ -140,12 +140,6 @@ impl OSM {
                 }
             }
         }
-    }
-
-    pub fn nodes_for(&self, way: &Way) -> Vec<&Node> {
-        way.node_ids.iter()
-            .map(|id| self.nodes.iter().find(|node| node.id == *id).unwrap())
-            .collect()
     }
 
     pub fn resolve_reference<'a>(&self, reference: UnresolvedReference) -> Reference {
@@ -185,7 +179,7 @@ enum ElementType {
 enum ElementData {
     Bounds(Coordinate, Coordinate, Coordinate, Coordinate),
     Node(Id, Coordinate, Coordinate, Vec<Tag>),
-    Way(Id, Vec<Id>, Vec<Tag>),
+    Way(Id, Vec<UnresolvedReference>, Vec<Tag>),
     Relation(Relation),
     // These two are here so we can terminate and skip uninteresting data without
     // using error handling.
@@ -335,7 +329,7 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribu
                     },
                     ElementType::NodeRef => {
                         let node_ref = try!(find_attribute("ref", &attributes).map_err(ErrorKind::MalformedWay));
-                        node_refs.push(node_ref);
+                        node_refs.push(UnresolvedReference::Node(node_ref));
                     },
                     ElementType::Bounds   |
                     ElementType::Node     |

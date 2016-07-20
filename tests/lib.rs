@@ -159,15 +159,37 @@ fn way_node_references() {
     let f = File::open("./tests/test_data/way.osm").unwrap();
     let osm = OSM::parse(f).unwrap();
 
-    let nodes = osm.nodes_for(&osm.ways[0]);
+    let nodes = &osm.ways[0].nodes;
     assert_eq!(nodes.len(), 7);
-    assert_eq!(nodes[0].id, 1375815878);
-    assert_eq!(nodes[1].id, 391448656);
-    assert_eq!(nodes[2].id, 340886677);
-    assert_eq!(nodes[3].id, 1651393269);
-    assert_eq!(nodes[4].id, 471408613);
-    assert_eq!(nodes[5].id, 25470395);
-    assert_eq!(nodes[6].id, 1376857625);
+
+    match nodes[0] {
+        osm::UnresolvedReference::Node(id) => assert_eq!(id, 1375815878),
+        _ => assert!(false, "Way reference was not reference to Node!")
+    }
+    match nodes[1] {
+        osm::UnresolvedReference::Node(id) => assert_eq!(id, 391448656),
+        _ => assert!(false, "Way reference was not reference to Node!")
+    }
+    match nodes[2] {
+        osm::UnresolvedReference::Node(id) => assert_eq!(id, 340886677),
+        _ => assert!(false, "Way reference was not reference to Node!")
+    }
+    match nodes[3] {
+        osm::UnresolvedReference::Node(id) => assert_eq!(id, 1651393269),
+        _ => assert!(false, "Way reference was not reference to Node!")
+    }
+    match nodes[4] {
+        osm::UnresolvedReference::Node(id) => assert_eq!(id, 471408613),
+        _ => assert!(false, "Way reference was not reference to Node!")
+    }
+    match nodes[5] {
+        osm::UnresolvedReference::Node(id) => assert_eq!(id, 25470395),
+        _ => assert!(false, "Way reference was not reference to Node!")
+    }
+    match nodes[6] {
+        osm::UnresolvedReference::Node(id) => assert_eq!(id, 1376857625),
+        _ => assert!(false, "Way reference was not reference to Node!")
+    }
 }
 
 #[test]
