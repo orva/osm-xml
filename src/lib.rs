@@ -58,6 +58,21 @@ pub enum Member {
     Relation(Id, Role),
 }
 
+#[derive(Debug, PartialEq)]
+pub enum UnresolvedReference {
+    Node(Id),
+    Way(Id),
+    Relation(Id)
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Reference<'a> {
+    Node(&'a Node),
+    Way(&'a Way),
+    Relation(&'a Relation),
+    Unresolved
+}
+
 #[derive(Debug)]
 pub struct OSM {
     pub bounds: Option<Bounds>,
@@ -131,6 +146,29 @@ impl OSM {
         way.node_ids.iter()
             .map(|id| self.nodes.iter().find(|node| node.id == *id).unwrap())
             .collect()
+    }
+
+    pub fn resolve_reference<'a>(&self, reference: UnresolvedReference) -> Reference {
+        match reference {
+            UnresolvedReference::Node(id) => {
+                match self.nodes.iter().find(|node| node.id == id) {
+                    Some(node) => Reference::Node(&node),
+                    None => Reference::Unresolved
+                }
+            },
+            UnresolvedReference::Way(id) => {
+                match self.ways.iter().find(|way| way.id == id) {
+                    Some(way) => Reference::Way(&way),
+                    None => Reference::Unresolved
+                }
+            },
+            UnresolvedReference::Relation(id) => {
+                match self.relations.iter().find(|relation| relation.id == id) {
+                    Some(relation) => Reference::Relation(&relation),
+                    None => Reference::Unresolved
+                }
+            }
+        }
     }
 }
 
