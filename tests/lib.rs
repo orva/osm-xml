@@ -196,16 +196,22 @@ fn relation_node_members() {
     let osm = OSM::parse(f).unwrap();
 
     match osm.relations[0].members[0] {
-        osm::Member::Node(ref id, ref role) => {
-            assert_eq!(*id, 345579224);
+        osm::Member::Node(ref ref_id, ref role) => {
+            match *ref_id {
+                osm::UnresolvedReference::Node(id) => assert_eq!(id, 345579224),
+                _ => assert!(false, "Member reference was wrong type!")
+            }
             assert_eq!(*role, "camera".to_string());
         },
         _ => assert!(false, "Member was not expected Member-variant")
     }
 
     match osm.relations[0].members[1] {
-        osm::Member::Node(ref id, ref role) => {
-            assert_eq!(*id, 345579225);
+        osm::Member::Node(ref ref_id, ref role) => {
+            match *ref_id {
+                osm::UnresolvedReference::Node(id) => assert_eq!(id, 345579225),
+                _ => assert!(false, "Member reference was wrong type!")
+            }
             assert_eq!(*role, "visible".to_string());
         },
         _ => assert!(false, "Member was not expected Member-variant")
@@ -218,16 +224,22 @@ fn relation_way_members() {
     let osm = OSM::parse(f).unwrap();
 
     match osm.relations[1].members[0] {
-        osm::Member::Way(ref id, ref role) => {
-            assert_eq!(*id, 123365172);
+        osm::Member::Way(ref ref_id, ref role) => {
+            match *ref_id {
+                osm::UnresolvedReference::Way(id) => assert_eq!(id, 123365172),
+                _ => assert!(false, "Member reference was wrong type!")
+            }
             assert_eq!(*role, "outer".to_string());
         },
         _ => assert!(false, "Member was not expected Member-variant")
     }
 
     match osm.relations[1].members[1] {
-        osm::Member::Way(ref id, ref role) => {
-            assert_eq!(*id, 22147620);
+        osm::Member::Way(ref ref_id, ref role) => {
+            match *ref_id {
+                osm::UnresolvedReference::Way(id) => assert_eq!(id, 22147620),
+                _ => assert!(false, "Member reference was wrong type!")
+            }
             assert_eq!(*role, "inner".to_string());
         },
         _ => assert!(false, "Member was not expected Member-variant")

@@ -53,9 +53,9 @@ pub struct Relation {
 
 #[derive(Debug, PartialEq)]
 pub enum Member {
-    Node(Id, Role),
-    Way(Id, Role),
-    Relation(Id, Role),
+    Node(UnresolvedReference, Role),
+    Way(UnresolvedReference, Role),
+    Relation(UnresolvedReference, Role),
 }
 
 #[derive(Debug, PartialEq)]
@@ -286,9 +286,9 @@ fn parse_relation(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAt
                         let el_role = try!(find_attribute_uncasted("role", &attributes).map_err(ErrorKind::MalformedRelation));
 
                         let el = match el_type.to_lowercase().as_ref() {
-                            "node" => Member::Node(el_ref, el_role),
-                            "way" => Member::Way(el_ref, el_role),
-                            "relation" => Member::Relation(el_ref, el_role),
+                            "node" => Member::Node(UnresolvedReference::Node(el_ref), el_role),
+                            "way" => Member::Way(UnresolvedReference::Way(el_ref), el_role),
+                            "relation" => Member::Relation(UnresolvedReference::Relation(el_ref), el_role),
                             _ => return Err(ErrorKind::MalformedRelation(AttributeError::Missing))
                         };
 
