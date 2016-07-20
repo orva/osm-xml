@@ -170,3 +170,66 @@ fn way_node_references() {
     assert_eq!(nodes[6].id, 1376857625);
 }
 
+#[test]
+fn relation_existence() {
+    let f = File::open("./tests/test_data/relations.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    assert_eq!(osm.relations.len(), 2);
+    assert_eq!(osm.relations[0].id, 77994);
+    assert_eq!(osm.relations[1].id, 1688359);
+}
+
+#[test]
+fn relation_tags() {
+    let f = File::open("./tests/test_data/relations.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    let tags = &osm.relations[0].tags;
+    assert_eq!(tags[0].key, "type".to_string());
+    assert_eq!(tags[0].val, "surveillance".to_string());
+}
+
+#[test]
+fn relation_node_members() {
+    let f = File::open("./tests/test_data/relations.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    match osm.relations[0].members[0] {
+        osm::Member::Node(ref id, ref role) => {
+            assert_eq!(*id, 345579224);
+            assert_eq!(*role, "camera".to_string());
+        },
+        _ => assert!(false, "Member was not expected Member-variant")
+    }
+
+    match osm.relations[0].members[1] {
+        osm::Member::Node(ref id, ref role) => {
+            assert_eq!(*id, 345579225);
+            assert_eq!(*role, "visible".to_string());
+        },
+        _ => assert!(false, "Member was not expected Member-variant")
+    }
+}
+
+#[test]
+fn relation_way_members() {
+    let f = File::open("./tests/test_data/relations.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    match osm.relations[1].members[0] {
+        osm::Member::Way(ref id, ref role) => {
+            assert_eq!(*id, 123365172);
+            assert_eq!(*role, "outer".to_string());
+        },
+        _ => assert!(false, "Member was not expected Member-variant")
+    }
+
+    match osm.relations[1].members[1] {
+        osm::Member::Way(ref id, ref role) => {
+            assert_eq!(*id, 22147620);
+            assert_eq!(*role, "inner".to_string());
+        },
+        _ => assert!(false, "Member was not expected Member-variant")
+    }
+}

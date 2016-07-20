@@ -8,6 +8,7 @@ pub enum ErrorKind {
     MalformedTag(AttributeError),
     MalformedNode(AttributeError),
     MalformedWay(AttributeError),
+    MalformedRelation(AttributeError),
     UnknownElement,
     XmlParseError(xml::reader::Error)
 }

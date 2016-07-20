@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="CGImap 0.4.0 (15910 thorn-04.openstreetmap.org)" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">
+ <bounds minlat="60.1670000" minlon="24.9498000" maxlat="60.1778000" maxlon="24.9698000"/>
+
+ <node id="345579224" visible="true" version="1" changeset="454488" timestamp="2009-02-15T13:08:08Z" user="alv" uid="4660" lat="60.1674604" lon="24.9626315">
+  <tag k="man_made" v="surveillance"/>
+ </node>
+ <node id="345579225" visible="true" version="6" changeset="14224603" timestamp="2012-12-10T12:46:34Z" user="woodpeck_repair" uid="145231" lat="60.1674660" lon="24.9625551">
+  <tag k="building" v="entrance"/>
+  <tag k="ref" v="B"/>
+ </node>
+
+
+ <node id="1375985764" visible="true" version="1" changeset="8845283" timestamp="2011-07-27T16:12:02Z" user="Daeron" uid="38239" lat="60.1723992" lon="24.9554697"/>
+ <node id="391457958" visible="true" version="5" changeset="8845283" timestamp="2011-07-27T16:12:25Z" user="Daeron" uid="38239" lat="60.1726587" lon="24.9554439"/>
+ <node id="391457961" visible="true" version="5" changeset="8845283" timestamp="2011-07-27T16:12:25Z" user="Daeron" uid="38239" lat="60.1726640" lon="24.9556594"/>
+ <node id="391457956" visible="true" version="5" changeset="8845283" timestamp="2011-07-27T16:12:25Z" user="Daeron" uid="38239" lat="60.1726792" lon="24.9562765"/>
+ <node id="1758939075" visible="true" version="1" changeset="11646592" timestamp="2012-05-19T21:20:03Z" user="ij_" uid="139957" lat="60.1726164" lon="24.9562827">
+  <tag k="entrance" v="staircase"/>
+  <tag k="ref" v="B"/>
+ </node>
+ <node id="3140591527" visible="true" version="1" changeset="26221790" timestamp="2014-10-20T20:03:33Z" user="ij_" uid="139957" lat="60.1724277" lon="24.9563015"/>
+ <node id="238191516" visible="true" version="9" changeset="8845283" timestamp="2011-07-27T16:12:21Z" user="Daeron" uid="38239" lat="60.1724197" lon="24.9563023"/>
+ <node id="1758939027" visible="true" version="1" changeset="11646592" timestamp="2012-05-19T21:20:03Z" user="ij_" uid="139957" lat="60.1724118" lon="24.9559820">
+  <tag k="entrance" v="staircase"/>
+  <tag k="ref" v="A"/>
+ </node>
+
+ <node id="238177687" visible="true" version="3" changeset="8845283" timestamp="2011-07-27T16:12:19Z" user="Daeron" uid="38239" lat="60.1725121" lon="24.9555828"/>
+ <node id="238177688" visible="true" version="3" changeset="8845283" timestamp="2011-07-27T16:12:19Z" user="Daeron" uid="38239" lat="60.1725231" lon="24.9560302"/>
+ <node id="238177689" visible="true" version="3" changeset="8845283" timestamp="2011-07-27T16:12:19Z" user="Daeron" uid="38239" lat="60.1726158" lon="24.9560210"/>
+ <node id="1015296778" visible="true" version="2" changeset="8845283" timestamp="2011-07-27T16:12:15Z" user="Daeron" uid="38239" lat="60.1726094" lon="24.9557640"/>
+ <node id="1015296755" visible="true" version="2" changeset="8845283" timestamp="2011-07-27T16:12:15Z" user="Daeron" uid="38239" lat="60.1726021" lon="24.9557648"/>
+ <node id="238177691" visible="true" version="3" changeset="8845283" timestamp="2011-07-27T16:12:20Z" user="Daeron" uid="38239" lat="60.1725974" lon="24.9555743"/>
+
+ <way id="123365172" visible="true" version="3" changeset="26221790" timestamp="2014-10-20T20:03:35Z" user="ij_" uid="139957">
+  <nd ref="1375985764"/>
+  <nd ref="391457958"/>
+  <nd ref="391457961"/>
+  <nd ref="391457956"/>
+  <nd ref="1758939075"/>
+  <nd ref="3140591527"/>
+  <nd ref="238191516"/>
+  <nd ref="1758939027"/>
+  <nd ref="1375985764"/>
+  <tag k="building" v="yes"/>
+ </way>
+
+ <way id="22147620" visible="true" version="4" changeset="6510578" timestamp="2010-12-02T01:15:52Z" user="Daeron" uid="38239">
+  <nd ref="238177687"/>
+  <nd ref="238177688"/>
+  <nd ref="238177689"/>
+  <nd ref="1015296778"/>
+  <nd ref="1015296755"/>
+  <nd ref="238177691"/>
+  <nd ref="238177687"/>
+ </way>
+
+
+ <relation id="77994" visible="true" version="1" changeset="454488" timestamp="2009-02-15T13:08:09Z" user="alv" uid="4660">
+  <member type="node" ref="345579224" role="camera"/>
+  <member type="node" ref="345579225" role="visible"/>
+  <tag k="type" v="surveillance"/>
+ </relation>
+
+ <relation id="1688359" visible="true" version="1" changeset="8845283" timestamp="2011-07-27T16:12:06Z" user="Daeron" uid="38239">
+  <member type="way" ref="123365172" role="outer"/>
+  <member type="way" ref="22147620" role="inner"/>
+  <tag k="type" v="multipolygon"/>
+ </relation>
+ </osm>
