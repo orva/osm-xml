@@ -199,9 +199,13 @@ fn relation_existence() {
     let f = File::open("./tests/test_data/relations.osm").unwrap();
     let osm = OSM::parse(f).unwrap();
 
-    assert_eq!(osm.relations.len(), 2);
+    assert_eq!(osm.relations.len(), 6);
     assert_eq!(osm.relations[0].id, 77994);
     assert_eq!(osm.relations[1].id, 1688359);
+    assert_eq!(osm.relations[2].id, 375952);
+    assert_eq!(osm.relations[3].id, 375951);
+    assert_eq!(osm.relations[4].id, 155054);
+    assert_eq!(osm.relations[5].id, 987654);
 }
 
 #[test]
@@ -300,3 +304,100 @@ fn way_invalid_reference_resolving() {
         _ => assert!(false, "Unresolvable Node reference was resolved!"),
     }
 }
+
+#[test]
+fn relation_node_reference_resolving() {
+    let f = File::open("./tests/test_data/relations.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    match osm.relations[0].members[0] {
+        osm::Member::Node(ref mref, _) => match osm.resolve_reference(mref) {
+            osm::Reference::Node(node) => assert_eq!(*node, osm.nodes[0]),
+            _ => assert!(false, "Resolvable Relation member was not resolved!")
+        },
+        _ => assert!(false, "Member should have been Node!")
+    }
+
+    match osm.relations[0].members[1] {
+        osm::Member::Node(ref mref, _) => match osm.resolve_reference(mref) {
+            osm::Reference::Node(node) => assert_eq!(*node, osm.nodes[1]),
+            _ => assert!(false, "Resolvable Relation member was not resolved!")
+        },
+        _ => assert!(false, "Member should have been Node!")
+    }
+}
+
+#[test]
+fn relation_way_reference_resolving() {
+    let f = File::open("./tests/test_data/relations.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    match osm.relations[1].members[0] {
+        osm::Member::Way(ref mref, _) => match osm.resolve_reference(mref) {
+            osm::Reference::Way(way) => assert_eq!(*way, osm.ways[0]),
+            _ => assert!(false, "Resolvable Relation member was not resolved!")
+        },
+        _ => assert!(false, "Member should have been Way!")
+    }
+
+    match osm.relations[1].members[1] {
+        osm::Member::Way(ref mref, _) => match osm.resolve_reference(mref) {
+            osm::Reference::Way(way) => assert_eq!(*way, osm.ways[1]),
+            _ => assert!(false, "Resolvable Relation member was not resolved!")
+        },
+        _ => assert!(false, "Member should have been Way!")
+    }
+}
+
+#[test]
+fn relation_relation_reference_resolving() {
+    let f = File::open("./tests/test_data/relations.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    match osm.relations[4].members[0] {
+        osm::Member::Relation(ref mref, _) => match osm.resolve_reference(mref) {
+            osm::Reference::Relation(rel) => assert_eq!(*rel, osm.relations[2]),
+            _ => assert!(false, "Resolvable Relation member was not resolved!")
+        },
+        _ => assert!(false, "Member should have been Relation!")
+    }
+
+    match osm.relations[4].members[1] {
+        osm::Member::Relation(ref mref, _) => match osm.resolve_reference(mref) {
+            osm::Reference::Relation(rel) => assert_eq!(*rel, osm.relations[3]),
+            _ => assert!(false, "Resolvable Relation member was not resolved!")
+        },
+        _ => assert!(false, "Member should have been Relation!")
+    }
+}
+
+#[test]
+fn relation_with_unresolvable_node() {
+    let f = File::open("./tests/test_data/relations.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    match osm.relations[5].members[0] {
+        osm::Member::Node(ref mref, _) => match osm.resolve_reference(mref) {
+            osm::Reference::Unresolved => assert!(true),
+            _ => assert!(false, "Unresolvable reference was resolved")
+        },
+        _ => assert!(false, "Member should have been Node!")
+    }
+
+    match osm.relations[5].members[1] {
+        osm::Member::Way(ref mref, _) => match osm.resolve_reference(mref) {
+            osm::Reference::Unresolved => assert!(true),
+            _ => assert!(false, "Unresolvable reference was resolved")
+        },
+        _ => assert!(false, "Member should have been Way!")
+    }
+
+    match osm.relations[5].members[2] {
+        osm::Member::Relation(ref mref, _) => match osm.resolve_reference(mref) {
+            osm::Reference::Unresolved => assert!(true),
+            _ => assert!(false, "Unresolvable reference was resolved")
+        },
+        _ => assert!(false, "Member should have been Relation!")
+    }
+}
+

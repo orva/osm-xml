@@ -68,4 +68,52 @@
   <member type="way" ref="22147620" role="inner"/>
   <tag k="type" v="multipolygon"/>
  </relation>
+
+ <!-- relation with relations -->
+ <relation id="375952" visible="true" version="3" changeset="8849649" timestamp="2011-07-27T21:49:31Z" user="Daeron" uid="38239">
+  <member type="node" ref="428386538" role="passengers"/>
+  <member type="node" ref="1376293695" role="vehicle"/>
+  <tag k="name" v="Kauppatori"/>
+  <tag k="name:fi" v="Kauppatori"/>
+  <tag k="name:sv" v="Salutorget"/>
+  <tag k="ref" v="0099"/>
+  <tag k="site" v="bus_stop"/>
+  <tag k="type" v="site"/>
+ </relation>
+
+ <relation id="375951" visible="true" version="3" changeset="8821811" timestamp="2011-07-24T22:03:37Z" user="ij_" uid="139957">
+  <member type="node" ref="428364606" role="passengers"/>
+  <member type="node" ref="1373187565" role="vehicle"/>
+  <tag k="amenity" v="ferry_terminal"/>
+  <tag k="name" v="Suomenlinna"/>
+  <tag k="name:fi" v="Suomenlinna"/>
+  <tag k="name:sv" v="Sveaborg"/>
+  <tag k="ref" v="0098"/>
+  <tag k="site" v="bus_stop"/>
+  <tag k="type" v="site"/>
+ </relation>
+
+ <relation id="155054" visible="true" version="7" changeset="22607217" timestamp="2014-05-28T19:48:59Z" user="keimo" uid="306862">
+  <member type="relation" ref="375952" role="stop"/>
+  <!-- Removed to keep the data bit more simpler -->
+  <!-- <member type="way" ref="123403659" role=""/> -->
+  <member type="relation" ref="375951" role="stop"/>
+  <tag k="duration" v="15"/>
+  <tag k="motor_vehicle" v="yes"/>
+  <tag k="name" v="Suomenlinnan lautta"/>
+  <tag k="name:fi" v="Suomenlinnan lautta"/>
+  <tag k="name:sv" v="Sveaborgsfärjan"/>
+  <tag k="network" v="Helsinki"/>
+  <tag k="operator" v="Suomenlinnan Liikenne Oy"/>
+  <tag k="route" v="ferry"/>
+  <tag k="type" v="route"/>
+ </relation>
+
+ <!-- relation with unresolvable members -->
+ <relation id="987654" visible="true" version="7" changeset="22607217" timestamp="2014-05-28T19:48:59Z" user="keimo" uid="306862">
+  <member type="node" ref="12345" role=""/>
+  <member type="way" ref="23456" role=""/>
+  <member type="relation" ref="345678" role=""/>
+ </relation>
+
  </osm>
