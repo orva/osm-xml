@@ -192,37 +192,16 @@ impl FromStr for ElementType {
     type Err = ErrorKind;
 
     fn from_str(s: &str) -> Result<ElementType, ErrorKind> {
-        let downcased = s.to_lowercase();
-
-        if downcased == "bounds" {
-            return Ok(ElementType::Bounds);
+        match s.to_lowercase().as_ref() {
+            "bounds"   => Ok(ElementType::Bounds),
+            "node"     => Ok(ElementType::Node),
+            "way"      => Ok(ElementType::Way),
+            "relation" => Ok(ElementType::Relation),
+            "tag"      => Ok(ElementType::Tag),
+            "nd"       => Ok(ElementType::NodeRef),
+            "member"   => Ok(ElementType::Member),
+            _ => Err(ErrorKind::UnknownElement)
         }
-
-        if downcased == "node" {
-            return Ok(ElementType::Node);
-        }
-
-        if downcased == "way" {
-            return Ok(ElementType::Way);
-        }
-
-        if downcased == "relation" {
-            return Ok(ElementType::Relation);
-        }
-
-        if downcased == "tag" {
-            return Ok(ElementType::Tag);
-        }
-
-        if downcased == "nd" {
-            return Ok(ElementType::NodeRef);
-        }
-
-        if downcased == "member" {
-            return Ok(ElementType::Member);
-        }
-
-        Err(ErrorKind::UnknownElement)
     }
 }
 
