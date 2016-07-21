@@ -142,8 +142,8 @@ impl OSM {
         }
     }
 
-    pub fn resolve_reference<'a>(&self, reference: UnresolvedReference) -> Reference {
-        match reference {
+    pub fn resolve_reference<'a>(&self, reference: &UnresolvedReference) -> Reference {
+        match *reference {
             UnresolvedReference::Node(id) => {
                 match self.nodes.iter().find(|node| node.id == id) {
                     Some(node) => Reference::Node(&node),

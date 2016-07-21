@@ -36,4 +36,9 @@
   <tag k="start_date" v="before 1815"/>
   <tag k="surface" v="paved"/>
  </way>
+
+ <way id="4253123" visible="true" version="19" changeset="20627130" timestamp="2014-02-17T23:43:30Z" user="ij_" uid="139957">
+  <nd ref="1375815878"/>
+  <nd ref="123456"/>
+ </way>
 </osm>

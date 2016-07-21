@@ -120,8 +120,10 @@ fn skip_malformed_node_tags() {
 fn way_existence() {
     let f = File::open("./tests/test_data/way.osm").unwrap();
     let osm = OSM::parse(f).unwrap();
-    assert_eq!(osm.ways.len(), 1);
+
+    assert_eq!(osm.ways.len(), 2);
     assert_eq!(osm.ways[0].id, 4253174);
+    assert_eq!(osm.ways[1].id, 4253123);
 }
 
 #[test]
@@ -265,5 +267,36 @@ fn relation_way_members() {
             assert_eq!(*role, "inner".to_string());
         },
         _ => assert!(false, "Member was not expected Member-variant")
+    }
+}
+
+#[test]
+fn way_reference_resolving() {
+    let f = File::open("./tests/test_data/way.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    for node_ref in osm.ways[0].nodes.iter() {
+        match osm.resolve_reference(node_ref) {
+            osm::Reference::Node(_) => continue,
+            osm::Reference::Unresolved => assert!(false, "Resolvable way node was not resolved!"),
+            _ => assert!(false, "Valid way references are always Nodes!")
+        }
+    }
+}
+
+#[test]
+fn way_invalid_reference_resolving() {
+    let f = File::open("./tests/test_data/way.osm").unwrap();
+    let osm = OSM::parse(f).unwrap();
+
+    match osm.resolve_reference(&osm.ways[1].nodes[0]) {
+        osm::Reference::Node(node) => assert_eq!(*node, osm.nodes[0]),
+        osm::Reference::Unresolved => assert!(false, "Resolvable way node was not resolved!"),
+        _ => assert!(false, "Valid way references are always Nodes!")
+    }
+
+    match osm.resolve_reference(&osm.ways[1].nodes[1]) {
+        osm::Reference::Unresolved => (),
+        _ => assert!(false, "Unresolvable Node reference was resolved!"),
     }
 }
