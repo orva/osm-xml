@@ -5,20 +5,24 @@
 Simple [osm xml v0.6][osm-xml-documentation] parser.
 
 Structure for the parsed data follows closely how OSM documents are formed: we
-have top level OSM struct containing bounds, [nodes array][node-doc], [ways
-array][way-doc] and [relations array][relation-doc]. Each parsed element follows
-closely their corresponding osm-wiki entry.
+have top level OSM struct containing bounds, [nodes][node-doc] array,
+[ways][way-doc] array and [relations][relation-doc] array. Each parsed element
+follows closely their corresponding osm-wiki entry.
 
 References to the other elements in the document are left unresolved in parsed
 form. There is API to resolve individual references to their corresponding
 elements, but whole document cannot be made connected.
 
-Tags for the element are stored as array of `Tag { key: String, val: String }`.
+[Tags][tag-doc] for the element are stored in `tags` array as `Tag { key:
+String, val: String }`.
 
 
-## usage
+## Usage
 
-Below is simple program which digs out some statistics from given osm-document:
+Below is simple example program which digs out some statistics from given
+osm-document. This includes parsing document, finding and using all the
+different kind of elements and resolving references (both resolvable and
+unresolvable).
 
 ```rust
 extern crate osm_xml as osm;
@@ -88,8 +92,9 @@ fn tag_count(doc: &osm::OSM) -> usize {
 ```
 
 
-## features missing for 1.0
+## Features missing for 1.0
 
+- (maybe) api call to determine if `Way` is a polygon
 - combining OSM-structs (something simple, make it easier to update existing
   elements inside map bounds)
 - writing out OSM documents
@@ -99,14 +104,14 @@ fn tag_count(doc: &osm::OSM) -> usize {
 
 
 
-## features which would be nice to have
+## Features which would be nice to have
 
-- tag "database": finding elements with tags faster / save memory on parsed
-  structure as tags are just references to actual strings
+- tag "database": would make finding elements with tags faster / saves memory on
+  parsed structure as tags are just references to actual strings
 
 
 
-## license
+## License
 
 osm-xml is licensed under MIT-license. See more in [LICENSE][license].
 
@@ -116,6 +121,7 @@ osm-xml is licensed under MIT-license. See more in [LICENSE][license].
 [node-doc]: http://wiki.openstreetmap.org/wiki/Node
 [way-doc]: http://wiki.openstreetmap.org/wiki/Way
 [relation-doc]: http://wiki.openstreetmap.org/wiki/Relation
+[tag-doc]: http://wiki.openstreetmap.org/wiki/Tag
 [osm-xml-documentation]: http://wiki.openstreetmap.org/wiki/OSM_XML
 [license]: https://github.com/orva/osm-xml/blob/master/LICENSE
 
