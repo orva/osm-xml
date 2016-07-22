@@ -19,6 +19,15 @@ key: String, val: String }`.
 
 ## Usage
 
+Add as dependency by adding this into `Cargo.toml`:
+
+```
+[dependencies]
+osm-xml = "0.4.0"
+```
+
+Then take crate into use with `extern crate osm_xml as osm;`.
+
 Below is simple example program which digs out some statistics from given
 osm-document. This includes parsing document, finding and using all the
 different kind of elements and resolving references (both resolvable and
@@ -83,7 +92,7 @@ fn tag_count(doc: &osm::OSM) -> usize {
     let way_tag_count = doc.ways.iter()
         .map(|way| way.tags.len())
         .fold(0, |acc, c| acc + c);
-    let relation_tag_count = doc.nodes.iter()
+    let relation_tag_count = doc.relations.iter()
         .map(|relation| relation.tags.len())
         .fold(0, |acc, c| acc + c);
 
@@ -115,6 +124,7 @@ fn tag_count(doc: &osm::OSM) -> usize {
 
 ### 0.4.0
 > 2016-07-22
+
 - Initial release
 
 
