@@ -1,5 +1,7 @@
 # osm-xml
 
+[![Build Status](https://travis-ci.org/orva/osm-xml.svg?branch=master)](https://travis-ci.org/orva/osm-xml)
+
 Simple [osm xml v0.6][osm-xml-documentation] parser.
 
 ## usage
