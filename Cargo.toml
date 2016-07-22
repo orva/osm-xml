@@ -1,7 +1,8 @@
 [package]
 name = "osm-xml"
 version = "0.1.0"
-authors = ["Iivari Äikäs <iivari.aikas@reaktor.com>"]
+authors = ["Iivari Äikäs <iivari.aikas@gmail.com>"]
+license = "MIT"
 
 [dependencies]
 xml-rs = "0.3"
