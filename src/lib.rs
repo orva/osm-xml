@@ -8,7 +8,7 @@ use xml::reader::{EventReader, XmlEvent};
 use xml::attribute::OwnedAttribute;
 
 mod error;
-use error::{ErrorKind, AttributeError};
+use error::{Error, ErrorReason};
 
 
 pub type Coordinate = f64;
@@ -91,7 +91,7 @@ impl OSM {
         }
     }
 
-    pub fn parse(file: File) -> Result<OSM, ErrorKind> {
+    pub fn parse(file: File) -> Result<OSM, Error> {
         let mut osm = OSM::empty();
 
         let reader = BufReader::new(file);
@@ -99,13 +99,13 @@ impl OSM {
 
         loop {
             match parse_element_data(&mut parser) {
-                Err(ErrorKind::XmlParseError(err)) => return Err(ErrorKind::XmlParseError(err)),
-                Err(ErrorKind::BoundsMissing(_)) => osm.bounds = None,
-                Err(ErrorKind::MalformedTag(_))       |
-                Err(ErrorKind::MalformedNode(_))      |
-                Err(ErrorKind::MalformedWay(_))       |
-                Err(ErrorKind::MalformedRelation(_))  |
-                Err(ErrorKind::UnknownElement)        => continue,
+                Err(Error::XmlParseError(err)) => return Err(Error::XmlParseError(err)),
+                Err(Error::BoundsMissing(_)) => osm.bounds = None,
+                Err(Error::MalformedTag(_))       |
+                Err(Error::MalformedNode(_))      |
+                Err(Error::MalformedWay(_))       |
+                Err(Error::MalformedRelation(_))  |
+                Err(Error::UnknownElement)        => continue,
                 Ok(data) => {
                     match data {
                         ElementData::EndOfDocument => return Ok(osm),
@@ -189,9 +189,9 @@ enum ElementData {
 
 
 impl FromStr for ElementType {
-    type Err = ErrorKind;
+    type Err = Error;
 
-    fn from_str(s: &str) -> Result<ElementType, ErrorKind> {
+    fn from_str(s: &str) -> Result<ElementType, Error> {
         match s.to_lowercase().as_ref() {
             "bounds"   => Ok(ElementType::Bounds),
             "node"     => Ok(ElementType::Node),
@@ -200,12 +200,12 @@ impl FromStr for ElementType {
             "tag"      => Ok(ElementType::Tag),
             "nd"       => Ok(ElementType::NodeRef),
             "member"   => Ok(ElementType::Member),
-            _ => Err(ErrorKind::UnknownElement)
+            _ => Err(Error::UnknownElement)
         }
     }
 }
 
-fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<ElementData, ErrorKind> {
+fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<ElementData, Error> {
     let element = try!(parser.next());
     match element {
         XmlEvent::EndDocument => Ok(ElementData::EndOfDocument),
@@ -217,15 +217,15 @@ fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<Eleme
                 ElementType::Node => parse_node(parser, &attributes),
                 ElementType::Way => parse_way(parser, &attributes),
                 ElementType::Relation => parse_relation(parser, &attributes),
-                _ => Err(ErrorKind::UnknownElement)
+                _ => Err(Error::UnknownElement)
             }
         },
         _ => Ok(ElementData::Ignored)
     }
 }
 
-fn parse_relation(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
-    let id = try!(find_attribute("id", attrs).map_err(ErrorKind::MalformedRelation));
+fn parse_relation(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
+    let id = try!(find_attribute("id", attrs).map_err(Error::MalformedRelation));
 
     let mut members = Vec::new();
     let mut tags = Vec::new();
@@ -254,15 +254,15 @@ fn parse_relation(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAt
                         }
                     },
                     ElementType::Member => {
-                        let el_type = try!(find_attribute_uncasted("type", &attributes).map_err(ErrorKind::MalformedRelation));
-                        let el_ref = try!(find_attribute("ref", &attributes).map_err(ErrorKind::MalformedRelation));
-                        let el_role = try!(find_attribute_uncasted("role", &attributes).map_err(ErrorKind::MalformedRelation));
+                        let el_type = try!(find_attribute_uncasted("type", &attributes).map_err(Error::MalformedRelation));
+                        let el_ref = try!(find_attribute("ref", &attributes).map_err(Error::MalformedRelation));
+                        let el_role = try!(find_attribute_uncasted("role", &attributes).map_err(Error::MalformedRelation));
 
                         let el = match el_type.to_lowercase().as_ref() {
                             "node" => Member::Node(UnresolvedReference::Node(el_ref), el_role),
                             "way" => Member::Way(UnresolvedReference::Way(el_ref), el_role),
                             "relation" => Member::Relation(UnresolvedReference::Relation(el_ref), el_role),
-                            _ => return Err(ErrorKind::MalformedRelation(AttributeError::Missing))
+                            _ => return Err(Error::MalformedRelation(ErrorReason::Missing))
                         };
 
                         members.push(el);
@@ -272,7 +272,7 @@ fn parse_relation(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAt
                     ElementType::Relation |
                     ElementType::Way      |
                     ElementType::NodeRef  => return Err(
-                        ErrorKind::MalformedRelation(AttributeError::IllegalNesting)
+                        Error::MalformedRelation(ErrorReason::IllegalNesting)
                     )
                 }
             },
@@ -281,8 +281,8 @@ fn parse_relation(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAt
     }
 }
 
-fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
-    let id = try!(find_attribute("id", attrs).map_err(ErrorKind::MalformedWay));
+fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
+    let id = try!(find_attribute("id", attrs).map_err(Error::MalformedWay));
 
     let mut node_refs = Vec::new();
     let mut tags = Vec::new();
@@ -307,7 +307,7 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribu
                         }
                     },
                     ElementType::NodeRef => {
-                        let node_ref = try!(find_attribute("ref", &attributes).map_err(ErrorKind::MalformedWay));
+                        let node_ref = try!(find_attribute("ref", &attributes).map_err(Error::MalformedWay));
                         node_refs.push(UnresolvedReference::Node(node_ref));
                     },
                     ElementType::Bounds   |
@@ -315,7 +315,7 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribu
                     ElementType::Relation |
                     ElementType::Way      |
                     ElementType::Member   => return Err(
-                        ErrorKind::MalformedWay(AttributeError::IllegalNesting)
+                        Error::MalformedWay(ErrorReason::IllegalNesting)
                     )
                 }
             },
@@ -325,10 +325,10 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribu
 
 }
 
-fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
-    let id = try!(find_attribute("id", attrs).map_err(ErrorKind::MalformedNode));
-    let lat = try!(find_attribute("lat", attrs).map_err(ErrorKind::MalformedNode));
-    let lon = try!(find_attribute("lon", attrs).map_err(ErrorKind::MalformedNode));
+fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
+    let id = try!(find_attribute("id", attrs).map_err(Error::MalformedNode));
+    let lat = try!(find_attribute("lat", attrs).map_err(Error::MalformedNode));
+    let lon = try!(find_attribute("lon", attrs).map_err(Error::MalformedNode));
 
     let mut tags = Vec::new();
 
@@ -357,7 +357,7 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
                     ElementType::Way      |
                     ElementType::NodeRef  |
                     ElementType::Member   => return Err(
-                        ErrorKind::MalformedNode(AttributeError::IllegalNesting)
+                        Error::MalformedNode(ErrorReason::IllegalNesting)
                     )
                 }
             },
@@ -366,23 +366,23 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
     }
 }
 
-fn parse_tag(attributes: &Vec<OwnedAttribute>) -> Result<Tag, ErrorKind> {
-    let key = try!(find_attribute_uncasted("k", attributes).map_err(ErrorKind::MalformedTag));
-    let val = try!(find_attribute_uncasted("v", attributes).map_err(ErrorKind::MalformedTag));
+fn parse_tag(attributes: &Vec<OwnedAttribute>) -> Result<Tag, Error> {
+    let key = try!(find_attribute_uncasted("k", attributes).map_err(Error::MalformedTag));
+    let val = try!(find_attribute_uncasted("v", attributes).map_err(Error::MalformedTag));
     Ok(Tag { key: key, val: val })
 }
 
-fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, ErrorKind> {
-    let minlat = try!(find_attribute("minlat", attrs).map_err(ErrorKind::BoundsMissing));
-    let minlon = try!(find_attribute("minlon", attrs).map_err(ErrorKind::BoundsMissing));
-    let maxlat = try!(find_attribute("maxlat", attrs).map_err(ErrorKind::BoundsMissing));
-    let maxlon = try!(find_attribute("maxlon", attrs).map_err(ErrorKind::BoundsMissing));
+fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
+    let minlat = try!(find_attribute("minlat", attrs).map_err(Error::BoundsMissing));
+    let minlon = try!(find_attribute("minlon", attrs).map_err(Error::BoundsMissing));
+    let maxlat = try!(find_attribute("maxlat", attrs).map_err(Error::BoundsMissing));
+    let maxlon = try!(find_attribute("maxlon", attrs).map_err(Error::BoundsMissing));
 
     Ok(ElementData::Bounds(minlat, minlon, maxlat, maxlon))
 }
 
-fn find_attribute<T>(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, AttributeError>
-    where AttributeError: std::convert::From<<T as std::str::FromStr>::Err>,
+fn find_attribute<T>(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, ErrorReason>
+    where ErrorReason: std::convert::From<<T as std::str::FromStr>::Err>,
           T: FromStr
 {
     let val_raw = try!(find_attribute_uncasted(name, attrs));
@@ -390,12 +390,12 @@ fn find_attribute<T>(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, Attri
     Ok(val)
 }
 
-fn find_attribute_uncasted(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<String, AttributeError> {
+fn find_attribute_uncasted(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<String, ErrorReason> {
     let attr = attrs.iter().find(|attr| attr.name.local_name == name);
     match attr {
         Some(a) => {
             Ok(a.value.clone())
         },
-        None => Err(AttributeError::Missing)
+        None => Err(ErrorReason::Missing)
     }
 }
