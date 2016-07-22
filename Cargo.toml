@@ -1,7 +1,18 @@
 [package]
 name = "osm-xml"
-version = "0.1.0"
+version = "0.4.0"
 authors = ["Iivari Äikäs <iivari.aikas@gmail.com>"]
+
+description = "OSM xml parser for Rust"
+homepage = "https://github.com/orva/osm-xml"
+readme = "./README.md"
+keywords = [
+  "OpenStreetMap",
+  "osm",
+  "osm",
+  "parser",
+  "xml",
+]
 license = "MIT"
 
 [dependencies]
