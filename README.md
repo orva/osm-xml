@@ -13,7 +13,7 @@ References to the other elements in the document are left unresolved in parsed
 form. There is API to resolve individual references to their corresponding
 elements, but whole document cannot be made connected.
 
-Tags for the lement are stored as array of `Tag { key: String, val: String }`.
+Tags for the element are stored as array of `Tag { key: String, val: String }`.
 
 
 ## usage

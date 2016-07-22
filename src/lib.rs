@@ -91,7 +91,7 @@ impl OSM {
         }
     }
 
-    pub fn parse(file: File) -> Option<OSM> {
+    pub fn parse(file: File) -> Result<OSM, ErrorKind> {
         let mut osm = OSM::empty();
 
         let reader = BufReader::new(file);
@@ -99,7 +99,7 @@ impl OSM {
 
         loop {
             match parse_element_data(&mut parser) {
-                Err(ErrorKind::XmlParseError(_)) => return None,
+                Err(ErrorKind::XmlParseError(err)) => return Err(ErrorKind::XmlParseError(err)),
                 Err(ErrorKind::BoundsMissing(_)) => osm.bounds = None,
                 Err(ErrorKind::MalformedTag(_))       |
                 Err(ErrorKind::MalformedNode(_))      |
@@ -108,7 +108,7 @@ impl OSM {
                 Err(ErrorKind::UnknownElement)        => continue,
                 Ok(data) => {
                     match data {
-                        ElementData::EndOfDocument => return Some(osm),
+                        ElementData::EndOfDocument => return Ok(osm),
                         ElementData::Ignored => continue,
                         ElementData::Bounds(minlat, minlon, maxlat, maxlon) => {
                             osm.bounds = Some(Bounds {
