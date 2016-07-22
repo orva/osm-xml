@@ -1,4 +1,4 @@
-extern crate osm;
+extern crate osm_xml as osm;
 
 use std::fs::File;
 use osm::OSM;
