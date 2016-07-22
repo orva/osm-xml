@@ -4,21 +4,107 @@
 
 Simple [osm xml v0.6][osm-xml-documentation] parser.
 
+Structure for the parsed data follows closely how OSM documents are formed: we
+have top level OSM struct containing bounds, [nodes array][node-doc], [ways
+array][way-doc] and [relations array][relation-doc]. Each parsed element follows
+closely their corresponding osm-wiki entry.
+
+References to the other elements in the document are left unresolved in parsed
+form. There is API to resolve individual references to their corresponding
+elements, but whole document cannot be made connected.
+
+Tags for the lement are stored as array of `Tag { key: String, val: String }`.
+
+
 ## usage
 
-to be written
+Below is simple program which digs out some statistics from given osm-document:
+
+```rust
+extern crate osm_xml as osm;
+
+use std::fs::File;
+
+fn main() {
+    let f = File::open("/path/to/map.osm").unwrap();
+    let doc = osm::OSM::parse(f).unwrap();
+    let rel_info = relation_reference_statistics(&doc);
+    let way_info = way_reference_statistics(&doc);
+
+    println!("Node count {}", doc.nodes.len());
+    println!("Way count {}", doc.ways.len());
+    println!("Relation count {}", doc.relations.len());
+    println!("Tag count {}", tag_count(&doc));
+
+    println!("Way reference count: {}, invalid references: {}",  way_info.0, way_info.1);
+    println!("Relation reference count: {}, resolved: {}, unresolved: {}", rel_info.0, rel_info.1, rel_info.2);
+}
+
+fn relation_reference_statistics(doc: &osm::OSM) -> (usize, usize, usize) {
+    doc.relations.iter()
+        .flat_map(|relation| relation.members.iter())
+        .fold((0, 0, 0), |acc, member| {
+            let el_ref = match *member {
+                 osm::Member::Node(ref el_ref, _) => el_ref,
+                 osm::Member::Way(ref el_ref, _) => el_ref,
+                 osm::Member::Relation(ref el_ref, _) => el_ref,
+            };
+
+            match doc.resolve_reference(&el_ref) {
+                osm::Reference::Unresolved => (acc.0 + 1, acc.1, acc.2 + 1),
+                osm::Reference::Node(_)     |
+                osm::Reference::Way(_)      |
+                osm::Reference::Relation(_) => (acc.0 + 1, acc.1 + 1, acc.2)
+            }
+        })
+}
+
+fn way_reference_statistics(doc: &osm::OSM) -> (usize, usize) {
+    doc.ways.iter()
+        .flat_map(|way| way.nodes.iter())
+        .fold((0, 0), |acc, node| {
+            match doc.resolve_reference(&node) {
+                osm::Reference::Node(_) => (acc.0 + 1, acc.1),
+                osm::Reference::Unresolved  |
+                osm::Reference::Way(_)      |
+                osm::Reference::Relation(_) => (acc.0, acc.1 + 1)
+            }
+        })
+}
+
+fn tag_count(doc: &osm::OSM) -> usize {
+    let node_tag_count = doc.nodes.iter()
+        .map(|node| node.tags.len())
+        .fold(0, |acc, c| acc + c);
+    let way_tag_count = doc.ways.iter()
+        .map(|way| way.tags.len())
+        .fold(0, |acc, c| acc + c);
+    let relation_tag_count = doc.nodes.iter()
+        .map(|relation| relation.tags.len())
+        .fold(0, |acc, c| acc + c);
+
+    node_tag_count + way_tag_count + relation_tag_count
+}
+```
+
 
 ## features missing for 1.0
 
 - combining OSM-structs (something simple, make it easier to update existing
   elements inside map bounds)
 - writing out OSM documents
+- common element attribute parsing (visible, author, changeset, etc)
+- customizing parsing behaviour (short circuit on errors, optional fields, etc)
+- nicer error reporting: position in the osm-document of the offending element
 
 
-### features which are nice to have
+
+## features which would be nice to have
 
 - tag "database": finding elements with tags faster / save memory on parsed
   structure as tags are just references to actual strings
+
+
 
 ## license
 
@@ -27,6 +113,9 @@ osm-xml is licensed under MIT-license. See more in [LICENSE][license].
 
 
 
+[node-doc]: http://wiki.openstreetmap.org/wiki/Node
+[way-doc]: http://wiki.openstreetmap.org/wiki/Way
+[relation-doc]: http://wiki.openstreetmap.org/wiki/Relation
 [osm-xml-documentation]: http://wiki.openstreetmap.org/wiki/OSM_XML
 [license]: https://github.com/orva/osm-xml/blob/master/LICENSE
 
