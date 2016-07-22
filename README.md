@@ -13,8 +13,8 @@ References to the other elements in the document are left unresolved in parsed
 form. There is API to resolve individual references to their corresponding
 elements, but whole document cannot be made connected.
 
-[Tags][tag-doc] for the element are stored in `tags` array as `Tag { key:
-String, val: String }`.
+[Tags][tag-doc] for the element are stored in `.tags` field as array of `Tag {
+key: String, val: String }`.
 
 
 ## Usage
@@ -108,6 +108,14 @@ fn tag_count(doc: &osm::OSM) -> usize {
 
 - tag "database": would make finding elements with tags faster / saves memory on
   parsed structure as tags are just references to actual strings
+
+
+
+## Changelog
+
+### 0.4.0
+> 2016-07-22
+- Initial release
 
 
 
