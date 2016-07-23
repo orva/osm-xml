@@ -1,6 +1,8 @@
 # osm-xml
 
 [![Build Status](https://travis-ci.org/orva/osm-xml.svg?branch=master)](https://travis-ci.org/orva/osm-xml)
+[![Crates.io version](https://img.shields.io/crates/v/osm-xml.svg?maxAge=2592000)](https://crates.io/crates/osm-xml)
+[![Crates.io license](https://img.shields.io/crates/l/osm-xml.svg?maxAge=2592000)](https://github.com/orva/osm-xml/blob/master/LICENSE)
 
 Simple [osm xml v0.6][osm-xml-documentation] parser.
 
