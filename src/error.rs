@@ -10,7 +10,7 @@ pub enum Error {
     MalformedWay(ErrorReason),
     MalformedRelation(ErrorReason),
     UnknownElement,
-    XmlParseError(xml::reader::Error)
+    XmlParseError(xml::reader::Error),
 }
 
 #[derive(Debug)]
@@ -18,7 +18,7 @@ pub enum ErrorReason {
     ParseFloat(ParseFloatError),
     ParseInt(ParseIntError),
     IllegalNesting,
-    Missing
+    Missing,
 }
 
 impl From<ParseFloatError> for ErrorReason {
@@ -38,5 +38,3 @@ impl From<xml::reader::Error> for Error {
         Error::XmlParseError(err)
     }
 }
-
-

@@ -18,7 +18,7 @@ pub type Role = String;
 #[derive(Debug, PartialEq)]
 pub struct Tag {
     pub key: String,
-    pub val: String
+    pub val: String,
 }
 
 #[derive(Debug, PartialEq)]
@@ -34,21 +34,21 @@ pub struct Node {
     pub id: Id,
     pub lat: Coordinate,
     pub lon: Coordinate,
-    pub tags: Vec<Tag>
+    pub tags: Vec<Tag>,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Way {
     pub id: Id,
     pub tags: Vec<Tag>,
-    pub nodes: Vec<UnresolvedReference>
+    pub nodes: Vec<UnresolvedReference>,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Relation {
     pub id: Id,
     pub members: Vec<Member>,
-    pub tags: Vec<Tag>
+    pub tags: Vec<Tag>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -62,7 +62,7 @@ pub enum Member {
 pub enum UnresolvedReference {
     Node(Id),
     Way(Id),
-    Relation(Id)
+    Relation(Id),
 }
 
 #[derive(Debug, PartialEq)]
@@ -70,7 +70,7 @@ pub enum Reference<'a> {
     Node(&'a Node),
     Way(&'a Way),
     Relation(&'a Relation),
-    Unresolved
+    Unresolved,
 }
 
 #[derive(Debug)]
@@ -78,7 +78,7 @@ pub struct OSM {
     pub bounds: Option<Bounds>,
     pub nodes: Vec<Node>,
     pub ways: Vec<Way>,
-    pub relations: Vec<Relation>
+    pub relations: Vec<Relation>,
 }
 
 impl OSM {
@@ -101,11 +101,11 @@ impl OSM {
             match parse_element_data(&mut parser) {
                 Err(Error::XmlParseError(err)) => return Err(Error::XmlParseError(err)),
                 Err(Error::BoundsMissing(_)) => osm.bounds = None,
-                Err(Error::MalformedTag(_))       |
-                Err(Error::MalformedNode(_))      |
-                Err(Error::MalformedWay(_))       |
-                Err(Error::MalformedRelation(_))  |
-                Err(Error::UnknownElement)        => continue,
+                Err(Error::MalformedTag(_)) |
+                Err(Error::MalformedNode(_)) |
+                Err(Error::MalformedWay(_)) |
+                Err(Error::MalformedRelation(_)) |
+                Err(Error::UnknownElement) => continue,
                 Ok(data) => {
                     match data {
                         ElementData::EndOfDocument => return Ok(osm),
@@ -115,24 +115,24 @@ impl OSM {
                                 minlat: minlat,
                                 minlon: minlon,
                                 maxlat: maxlat,
-                                maxlon: maxlon
+                                maxlon: maxlon,
                             });
-                        },
+                        }
                         ElementData::Node(id, lat, lon, tags) => {
                             osm.nodes.push(Node {
                                 id: id,
                                 lat: lat,
                                 lon: lon,
-                                tags: tags
+                                tags: tags,
                             });
-                        },
+                        }
                         ElementData::Way(id, node_refs, tags) => {
                             osm.ways.push(Way {
                                 id: id,
                                 nodes: node_refs,
-                                tags: tags
+                                tags: tags,
                             });
-                        },
+                        }
                         ElementData::Relation(relation) => {
                             osm.relations.push(relation);
                         }
@@ -147,19 +147,19 @@ impl OSM {
             UnresolvedReference::Node(id) => {
                 match self.nodes.iter().find(|node| node.id == id) {
                     Some(node) => Reference::Node(&node),
-                    None => Reference::Unresolved
+                    None => Reference::Unresolved,
                 }
-            },
+            }
             UnresolvedReference::Way(id) => {
                 match self.ways.iter().find(|way| way.id == id) {
                     Some(way) => Reference::Way(&way),
-                    None => Reference::Unresolved
+                    None => Reference::Unresolved,
                 }
-            },
+            }
             UnresolvedReference::Relation(id) => {
                 match self.relations.iter().find(|relation| relation.id == id) {
                     Some(relation) => Reference::Relation(&relation),
-                    None => Reference::Unresolved
+                    None => Reference::Unresolved,
                 }
             }
         }
@@ -184,7 +184,7 @@ enum ElementData {
     // These two are here so we can terminate and skip uninteresting data without
     // using error handling.
     EndOfDocument,
-    Ignored
+    Ignored,
 }
 
 
@@ -193,14 +193,14 @@ impl FromStr for ElementType {
 
     fn from_str(s: &str) -> Result<ElementType, Error> {
         match s.to_lowercase().as_ref() {
-            "bounds"   => Ok(ElementType::Bounds),
-            "node"     => Ok(ElementType::Node),
-            "way"      => Ok(ElementType::Way),
+            "bounds" => Ok(ElementType::Bounds),
+            "node" => Ok(ElementType::Node),
+            "way" => Ok(ElementType::Way),
             "relation" => Ok(ElementType::Relation),
-            "tag"      => Ok(ElementType::Tag),
-            "nd"       => Ok(ElementType::NodeRef),
-            "member"   => Ok(ElementType::Member),
-            _ => Err(Error::UnknownElement)
+            "tag" => Ok(ElementType::Tag),
+            "nd" => Ok(ElementType::NodeRef),
+            "member" => Ok(ElementType::Member),
+            _ => Err(Error::UnknownElement),
         }
     }
 }
@@ -217,14 +217,16 @@ fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<Eleme
                 ElementType::Node => parse_node(parser, &attributes),
                 ElementType::Way => parse_way(parser, &attributes),
                 ElementType::Relation => parse_relation(parser, &attributes),
-                _ => Err(Error::UnknownElement)
+                _ => Err(Error::UnknownElement),
             }
-        },
-        _ => Ok(ElementData::Ignored)
+        }
+        _ => Ok(ElementData::Ignored),
     }
 }
 
-fn parse_relation(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
+fn parse_relation(parser: &mut EventReader<BufReader<File>>,
+                  attrs: &Vec<OwnedAttribute>)
+                  -> Result<ElementData, Error> {
     let id = try!(find_attribute("id", attrs).map_err(Error::MalformedRelation));
 
     let mut members = Vec::new();
@@ -236,14 +238,16 @@ fn parse_relation(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAt
                 let element_type = try!(ElementType::from_str(&name.local_name));
 
                 match element_type {
-                    ElementType::Relation => return Ok(ElementData::Relation(Relation {
-                        id: id,
-                        members: members,
-                        tags: tags
-                    })),
-                    _ => continue
+                    ElementType::Relation => {
+                        return Ok(ElementData::Relation(Relation {
+                            id: id,
+                            members: members,
+                            tags: tags,
+                        }))
+                    }
+                    _ => continue,
                 }
-            },
+            }
             XmlEvent::StartElement { name, attributes, .. } => {
                 let element_type = try!(ElementType::from_str(&name.local_name));
 
@@ -252,36 +256,40 @@ fn parse_relation(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAt
                         if let Ok(tag) = parse_tag(&attributes) {
                             tags.push(tag);
                         }
-                    },
+                    }
                     ElementType::Member => {
-                        let el_type = try!(find_attribute_uncasted("type", &attributes).map_err(Error::MalformedRelation));
-                        let el_ref = try!(find_attribute("ref", &attributes).map_err(Error::MalformedRelation));
-                        let el_role = try!(find_attribute_uncasted("role", &attributes).map_err(Error::MalformedRelation));
+                        let el_type = try!(find_attribute_uncasted("type", &attributes)
+                            .map_err(Error::MalformedRelation));
+                        let el_ref = try!(find_attribute("ref", &attributes)
+                            .map_err(Error::MalformedRelation));
+                        let el_role = try!(find_attribute_uncasted("role", &attributes)
+                            .map_err(Error::MalformedRelation));
 
                         let el = match el_type.to_lowercase().as_ref() {
                             "node" => Member::Node(UnresolvedReference::Node(el_ref), el_role),
                             "way" => Member::Way(UnresolvedReference::Way(el_ref), el_role),
-                            "relation" => Member::Relation(UnresolvedReference::Relation(el_ref), el_role),
-                            _ => return Err(Error::MalformedRelation(ErrorReason::Missing))
+                            "relation" => {
+                                Member::Relation(UnresolvedReference::Relation(el_ref), el_role)
+                            }
+                            _ => return Err(Error::MalformedRelation(ErrorReason::Missing)),
                         };
 
                         members.push(el);
-                    },
-                    ElementType::Bounds   |
-                    ElementType::Node     |
-                    ElementType::Relation |
-                    ElementType::Way      |
-                    ElementType::NodeRef  => return Err(
-                        Error::MalformedRelation(ErrorReason::IllegalNesting)
-                    )
+                    }
+                    ElementType::Bounds | ElementType::Node | ElementType::Relation |
+                    ElementType::Way | ElementType::NodeRef => {
+                        return Err(Error::MalformedRelation(ErrorReason::IllegalNesting))
+                    }
                 }
-            },
-            _ => continue
+            }
+            _ => continue,
         }
     }
 }
 
-fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
+fn parse_way(parser: &mut EventReader<BufReader<File>>,
+             attrs: &Vec<OwnedAttribute>)
+             -> Result<ElementData, Error> {
     let id = try!(find_attribute("id", attrs).map_err(Error::MalformedWay));
 
     let mut node_refs = Vec::new();
@@ -294,9 +302,9 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribu
 
                 match element_type {
                     ElementType::Way => return Ok(ElementData::Way(id, node_refs, tags)),
-                    _ => continue
+                    _ => continue,
                 }
-            },
+            }
             XmlEvent::StartElement { name, attributes, .. } => {
                 let element_type = try!(ElementType::from_str(&name.local_name));
 
@@ -305,27 +313,27 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribu
                         if let Ok(tag) = parse_tag(&attributes) {
                             tags.push(tag);
                         }
-                    },
+                    }
                     ElementType::NodeRef => {
-                        let node_ref = try!(find_attribute("ref", &attributes).map_err(Error::MalformedWay));
+                        let node_ref = try!(find_attribute("ref", &attributes)
+                            .map_err(Error::MalformedWay));
                         node_refs.push(UnresolvedReference::Node(node_ref));
-                    },
-                    ElementType::Bounds   |
-                    ElementType::Node     |
-                    ElementType::Relation |
-                    ElementType::Way      |
-                    ElementType::Member   => return Err(
-                        Error::MalformedWay(ErrorReason::IllegalNesting)
-                    )
+                    }
+                    ElementType::Bounds | ElementType::Node | ElementType::Relation |
+                    ElementType::Way | ElementType::Member => {
+                        return Err(Error::MalformedWay(ErrorReason::IllegalNesting))
+                    }
                 }
-            },
-            _ => continue
+            }
+            _ => continue,
         }
     }
 
 }
 
-fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
+fn parse_node(parser: &mut EventReader<BufReader<File>>,
+              attrs: &Vec<OwnedAttribute>)
+              -> Result<ElementData, Error> {
     let id = try!(find_attribute("id", attrs).map_err(Error::MalformedNode));
     let lat = try!(find_attribute("lat", attrs).map_err(Error::MalformedNode));
     let lon = try!(find_attribute("lon", attrs).map_err(Error::MalformedNode));
@@ -339,9 +347,9 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
 
                 match element_type {
                     ElementType::Node => return Ok(ElementData::Node(id, lat, lon, tags)),
-                    _ => continue
+                    _ => continue,
                 }
-            },
+            }
             XmlEvent::StartElement { name, attributes, .. } => {
                 let element_type = try!(ElementType::from_str(&name.local_name));
 
@@ -350,18 +358,14 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
                         if let Ok(tag) = parse_tag(&attributes) {
                             tags.push(tag);
                         }
-                    },
-                    ElementType::Bounds   |
-                    ElementType::Node     |
-                    ElementType::Relation |
-                    ElementType::Way      |
-                    ElementType::NodeRef  |
-                    ElementType::Member   => return Err(
-                        Error::MalformedNode(ErrorReason::IllegalNesting)
-                    )
+                    }
+                    ElementType::Bounds | ElementType::Node | ElementType::Relation |
+                    ElementType::Way | ElementType::NodeRef | ElementType::Member => {
+                        return Err(Error::MalformedNode(ErrorReason::IllegalNesting))
+                    }
                 }
-            },
-            _ => continue
+            }
+            _ => continue,
         }
     }
 }
@@ -369,7 +373,10 @@ fn parse_node(parser: &mut EventReader<BufReader<File>>, attrs: &Vec<OwnedAttrib
 fn parse_tag(attributes: &Vec<OwnedAttribute>) -> Result<Tag, Error> {
     let key = try!(find_attribute_uncasted("k", attributes).map_err(Error::MalformedTag));
     let val = try!(find_attribute_uncasted("v", attributes).map_err(Error::MalformedTag));
-    Ok(Tag { key: key, val: val })
+    Ok(Tag {
+        key: key,
+        val: val,
+    })
 }
 
 fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
@@ -393,9 +400,7 @@ fn find_attribute<T>(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, Error
 fn find_attribute_uncasted(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<String, ErrorReason> {
     let attr = attrs.iter().find(|attr| attr.name.local_name == name);
     match attr {
-        Some(a) => {
-            Ok(a.value.clone())
-        },
-        None => Err(ErrorReason::Missing)
+        Some(a) => Ok(a.value.clone()),
+        None => Err(ErrorReason::Missing),
     }
 }
