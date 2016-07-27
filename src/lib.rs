@@ -13,6 +13,7 @@ use error::{Error, ErrorReason};
 mod elements;
 pub use elements::{Coordinate, Id, Role, Bounds, Node, Way, Relation, Member, Tag, Reference,
                    UnresolvedReference};
+mod polygon;
 
 #[derive(Debug)]
 pub struct OSM {

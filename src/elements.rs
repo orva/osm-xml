@@ -1,3 +1,5 @@
+use polygon;
+
 pub type Coordinate = f64;
 pub type Id = i64;
 pub type Role = String;
@@ -29,6 +31,12 @@ pub struct Way {
     pub id: Id,
     pub tags: Vec<Tag>,
     pub nodes: Vec<UnresolvedReference>,
+}
+
+impl Way {
+    pub fn is_polygon(&self) -> bool {
+        polygon::is_polygon(self)
+    }
 }
 
 #[derive(Debug, PartialEq)]
