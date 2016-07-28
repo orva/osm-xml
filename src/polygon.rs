@@ -145,9 +145,24 @@ static RULES: [Rule; 26] =
      }];
 
 pub fn is_polygon(way: &Way) -> bool {
+    if is_closed_loop(way) {
+        return true;
+    }
+
     way.tags.iter().any(|tag| {
         RULES.iter().any(|rule| rule.key == tag.key && has_matching_rule_value(rule, tag))
     })
+}
+
+fn is_closed_loop(way: &Way) -> bool {
+    let first = way.nodes.first();
+    let last = way.nodes.last();
+
+    if let None = first.and(last) {
+        return false;
+    }
+
+    first.unwrap() == last.unwrap()
 }
 
 fn has_matching_rule_value(rule: &Rule, tag: &Tag) -> bool {
@@ -165,10 +180,10 @@ fn has_matching_rule_value(rule: &Rule, tag: &Tag) -> bool {
 #[cfg(test)]
 mod test {
     use super::*;
-    use elements::{Way, Tag};
+    use elements::{Way, Tag, UnresolvedReference};
 
     #[test]
-    fn tagless_is_not_polygon() {
+    fn tagless_and_nonloop_is_not_polygon() {
         let way = Way {
             id: 1234567,
             tags: Vec::new(),
@@ -176,6 +191,23 @@ mod test {
         };
 
         assert!(!is_polygon(&way));
+    }
+
+    #[test]
+    fn closed_loop_is_polygon() {
+        let way = Way {
+            id: 1234567,
+            tags: Vec::new(),
+            nodes: vec![
+                UnresolvedReference::Node(1),
+                UnresolvedReference::Node(2),
+                UnresolvedReference::Node(3),
+                UnresolvedReference::Node(26),
+                UnresolvedReference::Node(1),
+                ],
+        };
+
+        assert!(is_polygon(&way));
     }
 
     #[test]
@@ -255,8 +287,26 @@ mod test {
             tags: vec![
                 Tag { key: String::from("highway"), val: String::from("footway") },
                 Tag { key: String::from("highway"), val: String::from("escape") },
-            ],
+                ],
             nodes: Vec::new(),
+        };
+
+        assert!(is_polygon(&way));
+    }
+
+    #[test]
+    fn nonloop_and_whitelist_match_is_polygon() {
+        let way = Way {
+            id: 1234567,
+            tags: vec![Tag {
+                           key: String::from("highway"),
+                           val: String::from("escape"),
+                       }],
+            nodes: vec![
+                UnresolvedReference::Node(1),
+                UnresolvedReference::Node(2),
+                UnresolvedReference::Node(3),
+                ],
         };
 
         assert!(is_polygon(&way));
@@ -311,8 +361,26 @@ mod test {
             tags: vec![
                 Tag { key: String::from("natural"), val: String::from("cliff") },
                 Tag { key: String::from("natural"), val: String::from("tree") },
-            ],
+                ],
             nodes: Vec::new(),
+        };
+
+        assert!(is_polygon(&way));
+    }
+
+    #[test]
+    fn nonloop_and_blacklist_cleared_is_polygon() {
+        let way = Way {
+            id: 1234567,
+            tags: vec![Tag {
+                           key: String::from("natural"),
+                           val: String::from("tree"),
+                       }],
+            nodes: vec![
+                UnresolvedReference::Node(1),
+                UnresolvedReference::Node(2),
+                UnresolvedReference::Node(3),
+                ],
         };
 
         assert!(is_polygon(&way));
