@@ -45,9 +45,17 @@ fn main() {
     let doc = osm::OSM::parse(f).unwrap();
     let rel_info = relation_reference_statistics(&doc);
     let way_info = way_reference_statistics(&doc);
+    let poly_count = doc.ways.iter().fold(0, |acc, way| {
+        if way.is_polygon() {
+            return acc + 1
+        }
+
+        acc
+    });
 
     println!("Node count {}", doc.nodes.len());
     println!("Way count {}", doc.ways.len());
+    println!("Polygon count {}", poly_count);
     println!("Relation count {}", doc.relations.len());
     println!("Tag count {}", tag_count(&doc));
 
@@ -105,7 +113,6 @@ fn tag_count(doc: &osm::OSM) -> usize {
 
 ## Features missing for 1.0
 
-- (maybe) api call to determine if `Way` is a polygon
 - combining OSM-structs (something simple, make it easier to update existing
   elements inside map bounds)
 - writing out OSM documents
