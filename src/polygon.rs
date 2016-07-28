@@ -150,7 +150,9 @@ pub fn is_polygon(way: &Way) -> bool {
     }
 
     way.tags.iter().any(|tag| {
-        RULES.iter().any(|rule| rule.key == tag.key && has_matching_rule_value(rule, tag))
+        RULES.iter().any(|rule| {
+            rule.key == tag.key && tag.val != "no" && has_matching_rule_value(rule, tag)
+        })
     })
 }
 
@@ -384,5 +386,50 @@ mod test {
         };
 
         assert!(is_polygon(&way));
+    }
+
+
+    #[test]
+    fn rules_with_no_value_are_not_polygons() {
+        let keys = vec![
+            "building",
+            "highway",
+            "natural",
+            "landuse",
+            "waterway",
+            "amenity",
+            "leisure",
+            "barrier",
+            "railway",
+            "area",
+            "boundary",
+            "man_made",
+            "power",
+            "place",
+            "shop",
+            "aeroway",
+            "tourism",
+            "historic",
+            "public_transport",
+            "office",
+            "building:part",
+            "military",
+            "ruins",
+            "area:highway",
+            "craft",
+            "golf",
+            ];
+
+        let ways = keys.iter().map(|key| {
+            return Way {
+                id: 1234567,
+                tags: vec![ Tag { key: String::from(*key), val: String::from("no") }, ],
+                nodes: Vec::new(),
+            };
+        });
+
+        for way in ways {
+            assert!(!is_polygon(&way));
+        }
     }
 }
