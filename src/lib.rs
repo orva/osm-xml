@@ -1,3 +1,10 @@
+#![deny(missing_copy_implementations,
+        trivial_numeric_casts,
+        trivial_casts,
+        unused_extern_crates,
+        unused_import_braces,
+        unused_qualifications)]
+
 extern crate xml;
 
 use std::io::prelude::*;
@@ -330,7 +337,7 @@ fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
 }
 
 fn find_attribute<T>(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, ErrorReason>
-    where ErrorReason: std::convert::From<<T as std::str::FromStr>::Err>,
+    where ErrorReason: From<<T as std::str::FromStr>::Err>,
           T: FromStr
 {
     let val_raw = try!(find_attribute_uncasted(name, attrs));
