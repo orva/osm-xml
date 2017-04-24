@@ -6,7 +6,7 @@ use std::str::FromStr;
 use xml::reader::{EventReader, XmlEvent};
 use xml::attribute::OwnedAttribute;
 
-mod error;
+pub mod error;
 use error::{Error, ErrorReason};
 
 mod elements;
