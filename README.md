@@ -25,7 +25,7 @@ Add as dependency by adding this into `Cargo.toml`:
 
 ```
 [dependencies]
-osm-xml = "0.5.0"
+osm-xml = "0.5.1"
 ```
 
 Then take crate into use with `extern crate osm_xml as osm;`.
@@ -130,6 +130,10 @@ fn tag_count(doc: &osm::OSM) -> usize {
 
 
 ## Changelog
+### 0.5.1
+> 2017-04-25
+
+- Relax OSM::parse to take `Read` instead of `File`
 
 ### 0.5.0
 > 2016-07-28
