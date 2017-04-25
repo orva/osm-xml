@@ -4,13 +4,13 @@ pub type Coordinate = f64;
 pub type Id = i64;
 pub type Role = String;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Tag {
     pub key: String,
     pub val: String,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Bounds {
     pub minlat: Coordinate,
     pub minlon: Coordinate,
@@ -18,7 +18,7 @@ pub struct Bounds {
     pub maxlon: Coordinate,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Node {
     pub id: Id,
     pub lat: Coordinate,
@@ -26,7 +26,7 @@ pub struct Node {
     pub tags: Vec<Tag>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Way {
     pub id: Id,
     pub tags: Vec<Tag>,
@@ -39,28 +39,28 @@ impl Way {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Relation {
     pub id: Id,
     pub members: Vec<Member>,
     pub tags: Vec<Tag>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Member {
     Node(UnresolvedReference, Role),
     Way(UnresolvedReference, Role),
     Relation(UnresolvedReference, Role),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum UnresolvedReference {
     Node(Id),
     Way(Id),
     Relation(Id),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Reference<'a> {
     Node(&'a Node),
     Way(&'a Way),

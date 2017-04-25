@@ -1,13 +1,19 @@
+#![deny(missing_copy_implementations,
+        trivial_numeric_casts,
+        trivial_casts,
+        unused_extern_crates,
+        unused_import_braces,
+        unused_qualifications)]
+
 extern crate xml;
 
-use std::fs::File;
-use std::io::BufReader;
+use std::io::prelude::*;
 use std::str::FromStr;
 
 use xml::reader::{EventReader, XmlEvent};
 use xml::attribute::OwnedAttribute;
 
-mod error;
+pub mod error;
 use error::{Error, ErrorReason};
 
 mod elements;
@@ -33,11 +39,11 @@ impl OSM {
         }
     }
 
-    pub fn parse(file: File) -> Result<OSM, Error> {
+    pub fn parse<R: Read>(source: R) -> Result<OSM, Error> {
+        
         let mut osm = OSM::empty();
 
-        let reader = BufReader::new(file);
-        let mut parser = EventReader::new(reader);
+        let mut parser = EventReader::new(source);
 
         loop {
             match parse_element_data(&mut parser) {
@@ -147,7 +153,7 @@ impl FromStr for ElementType {
     }
 }
 
-fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<ElementData, Error> {
+fn parse_element_data<R: Read>(parser: &mut EventReader<R>) -> Result<ElementData, Error> {
     let element = try!(parser.next());
     match element {
         XmlEvent::EndDocument => Ok(ElementData::EndOfDocument),
@@ -166,7 +172,7 @@ fn parse_element_data(parser: &mut EventReader<BufReader<File>>) -> Result<Eleme
     }
 }
 
-fn parse_relation(parser: &mut EventReader<BufReader<File>>,
+fn parse_relation<R: Read>(parser: &mut EventReader<R>,
                   attrs: &Vec<OwnedAttribute>)
                   -> Result<ElementData, Error> {
     let id = try!(find_attribute("id", attrs).map_err(Error::MalformedRelation));
@@ -229,7 +235,7 @@ fn parse_relation(parser: &mut EventReader<BufReader<File>>,
     }
 }
 
-fn parse_way(parser: &mut EventReader<BufReader<File>>,
+fn parse_way<R: Read>(parser: &mut EventReader<R>,
              attrs: &Vec<OwnedAttribute>)
              -> Result<ElementData, Error> {
     let id = try!(find_attribute("id", attrs).map_err(Error::MalformedWay));
@@ -273,7 +279,7 @@ fn parse_way(parser: &mut EventReader<BufReader<File>>,
 
 }
 
-fn parse_node(parser: &mut EventReader<BufReader<File>>,
+fn parse_node<R: Read>(parser: &mut EventReader<R>,
               attrs: &Vec<OwnedAttribute>)
               -> Result<ElementData, Error> {
     let id = try!(find_attribute("id", attrs).map_err(Error::MalformedNode));
@@ -331,7 +337,7 @@ fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
 }
 
 fn find_attribute<T>(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, ErrorReason>
-    where ErrorReason: std::convert::From<<T as std::str::FromStr>::Err>,
+    where ErrorReason: From<<T as std::str::FromStr>::Err>,
           T: FromStr
 {
     let val_raw = try!(find_attribute_uncasted(name, attrs));
