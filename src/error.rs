@@ -56,3 +56,13 @@ impl fmt::Display for Error {
         
     }
 }
+
+impl ::std::error::Error for Error {
+    fn description(&self) -> &str {
+        "OSM XML error"
+    }
+
+    fn cause(&self) -> Option<&::std::error::Error> {
+        None
+    }
+}
