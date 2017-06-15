@@ -13,6 +13,8 @@ pub enum Error {
     XmlParseError(xml::reader::Error),
 }
 
+use std::fmt;
+
 #[derive(Debug)]
 pub enum ErrorReason {
     ParseFloat(ParseFloatError),
@@ -36,5 +38,21 @@ impl From<ParseIntError> for ErrorReason {
 impl From<xml::reader::Error> for Error {
     fn from(err: xml::reader::Error) -> Error {
         Error::XmlParseError(err)
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use Error::*;
+        match *self {
+            BoundsMissing(ref reason) => write!(f, "OSM XML error: Missing bounds: {:?}", reason),
+            MalformedTag(ref reason) => write!(f, "OSM XML error: Malformed tag: {:?}", reason),
+            MalformedNode(ref reason) => write!(f, "OSM XML error: Malformed node: {:?}", reason),
+            MalformedWay(ref reason) => write!(f, "OSM XML error: Malformed way: {:?}", reason),
+            MalformedRelation(ref reason) => write!(f, "OSM XML error: Malformed relation: {:?}", reason),
+            UnknownElement => write!(f, "OSM XML error: Unknown XML element"),
+            XmlParseError(ref reason) => write!(f, "OSM XML parse error: {}", reason),
+        }
+        
     }
 }
