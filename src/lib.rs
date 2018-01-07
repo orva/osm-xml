@@ -1,10 +1,7 @@
-#![deny(missing_copy_implementations,
-        trivial_numeric_casts,
-        trivial_casts,
-        unused_extern_crates,
-        unused_import_braces,
-        unused_qualifications)]
+#![deny(missing_copy_implementations, trivial_numeric_casts, trivial_casts, unused_extern_crates,
+       unused_import_braces, unused_qualifications)]
 
+extern crate fnv;
 extern crate xml;
 
 use std::io::prelude::*;
@@ -15,32 +12,32 @@ use xml::attribute::OwnedAttribute;
 
 pub mod error;
 use error::{Error, ErrorReason};
+use fnv::FnvHashMap;
 
 mod elements;
-pub use elements::{Coordinate, Id, Role, Bounds, Node, Way, Relation, Member, Tag, Reference,
-                   UnresolvedReference};
+pub use elements::{Bounds, Coordinate, Id, Member, Node, Reference, Relation, Role, Tag,
+                   UnresolvedReference, Way};
 mod polygon;
 
 #[derive(Debug)]
 pub struct OSM {
     pub bounds: Option<Bounds>,
-    pub nodes: Vec<Node>,
-    pub ways: Vec<Way>,
-    pub relations: Vec<Relation>,
+    pub nodes: FnvHashMap<Id, Node>,
+    pub ways: FnvHashMap<Id, Way>,
+    pub relations: FnvHashMap<Id, Relation>,
 }
 
 impl OSM {
     fn empty() -> OSM {
         OSM {
             bounds: None,
-            nodes: Vec::new(),
-            ways: Vec::new(),
-            relations: Vec::new(),
+            nodes: FnvHashMap::default(),
+            ways: FnvHashMap::default(),
+            relations: FnvHashMap::default(),
         }
     }
 
     pub fn parse<R: Read>(source: R) -> Result<OSM, Error> {
-        
         let mut osm = OSM::empty();
 
         let mut parser = EventReader::new(source);
@@ -54,62 +51,60 @@ impl OSM {
                 Err(Error::MalformedWay(_)) |
                 Err(Error::MalformedRelation(_)) |
                 Err(Error::UnknownElement) => continue,
-                Ok(data) => {
-                    match data {
-                        ElementData::EndOfDocument => return Ok(osm),
-                        ElementData::Ignored => continue,
-                        ElementData::Bounds(minlat, minlon, maxlat, maxlon) => {
-                            osm.bounds = Some(Bounds {
-                                minlat: minlat,
-                                minlon: minlon,
-                                maxlat: maxlat,
-                                maxlon: maxlon,
-                            });
-                        }
-                        ElementData::Node(id, lat, lon, tags) => {
-                            osm.nodes.push(Node {
+                Ok(data) => match data {
+                    ElementData::EndOfDocument => return Ok(osm),
+                    ElementData::Ignored => continue,
+                    ElementData::Bounds(minlat, minlon, maxlat, maxlon) => {
+                        osm.bounds = Some(Bounds {
+                            minlat: minlat,
+                            minlon: minlon,
+                            maxlat: maxlat,
+                            maxlon: maxlon,
+                        });
+                    }
+                    ElementData::Node(id, lat, lon, tags) => {
+                        osm.nodes.insert(
+                            id,
+                            Node {
                                 id: id,
                                 lat: lat,
                                 lon: lon,
                                 tags: tags,
-                            });
-                        }
-                        ElementData::Way(id, node_refs, tags) => {
-                            osm.ways.push(Way {
+                            },
+                        );
+                    }
+                    ElementData::Way(id, node_refs, tags) => {
+                        osm.ways.insert(
+                            id,
+                            Way {
                                 id: id,
                                 nodes: node_refs,
                                 tags: tags,
-                            });
-                        }
-                        ElementData::Relation(relation) => {
-                            osm.relations.push(relation);
-                        }
+                            },
+                        );
                     }
-                }
+                    ElementData::Relation(relation) => {
+                        osm.relations.insert(relation.id, relation);
+                    }
+                },
             }
         }
     }
 
     pub fn resolve_reference<'a>(&self, reference: &UnresolvedReference) -> Reference {
         match *reference {
-            UnresolvedReference::Node(id) => {
-                match self.nodes.iter().find(|node| node.id == id) {
-                    Some(node) => Reference::Node(&node),
-                    None => Reference::Unresolved,
-                }
-            }
-            UnresolvedReference::Way(id) => {
-                match self.ways.iter().find(|way| way.id == id) {
-                    Some(way) => Reference::Way(&way),
-                    None => Reference::Unresolved,
-                }
-            }
-            UnresolvedReference::Relation(id) => {
-                match self.relations.iter().find(|relation| relation.id == id) {
-                    Some(relation) => Reference::Relation(&relation),
-                    None => Reference::Unresolved,
-                }
-            }
+            UnresolvedReference::Node(id) => self.nodes
+                .get(&id)
+                .map(Reference::Node)
+                .unwrap_or(Reference::Unresolved),
+            UnresolvedReference::Way(id) => self.ways
+                .get(&id)
+                .map(Reference::Way)
+                .unwrap_or(Reference::Unresolved),
+            UnresolvedReference::Relation(id) => self.relations
+                .get(&id)
+                .map(Reference::Relation)
+                .unwrap_or(Reference::Unresolved),
         }
     }
 }
@@ -157,7 +152,9 @@ fn parse_element_data<R: Read>(parser: &mut EventReader<R>) -> Result<ElementDat
     let element = try!(parser.next());
     match element {
         XmlEvent::EndDocument => Ok(ElementData::EndOfDocument),
-        XmlEvent::StartElement { name, attributes, .. } => {
+        XmlEvent::StartElement {
+            name, attributes, ..
+        } => {
             let element_type = try!(ElementType::from_str(&name.local_name));
 
             match element_type {
@@ -172,9 +169,10 @@ fn parse_element_data<R: Read>(parser: &mut EventReader<R>) -> Result<ElementDat
     }
 }
 
-fn parse_relation<R: Read>(parser: &mut EventReader<R>,
-                  attrs: &Vec<OwnedAttribute>)
-                  -> Result<ElementData, Error> {
+fn parse_relation<R: Read>(
+    parser: &mut EventReader<R>,
+    attrs: &Vec<OwnedAttribute>,
+) -> Result<ElementData, Error> {
     let id = try!(find_attribute("id", attrs).map_err(Error::MalformedRelation));
 
     let mut members = Vec::new();
@@ -196,22 +194,27 @@ fn parse_relation<R: Read>(parser: &mut EventReader<R>,
                     _ => continue,
                 }
             }
-            XmlEvent::StartElement { name, attributes, .. } => {
+            XmlEvent::StartElement {
+                name, attributes, ..
+            } => {
                 let element_type = try!(ElementType::from_str(&name.local_name));
 
                 match element_type {
-                    ElementType::Tag => {
-                        if let Ok(tag) = parse_tag(&attributes) {
-                            tags.push(tag);
-                        }
-                    }
+                    ElementType::Tag => if let Ok(tag) = parse_tag(&attributes) {
+                        tags.push(tag);
+                    },
                     ElementType::Member => {
-                        let el_type = try!(find_attribute_uncasted("type", &attributes)
-                            .map_err(Error::MalformedRelation));
-                        let el_ref = try!(find_attribute("ref", &attributes)
-                            .map_err(Error::MalformedRelation));
-                        let el_role = try!(find_attribute_uncasted("role", &attributes)
-                            .map_err(Error::MalformedRelation));
+                        let el_type = try!(
+                            find_attribute_uncasted("type", &attributes)
+                                .map_err(Error::MalformedRelation)
+                        );
+                        let el_ref = try!(
+                            find_attribute("ref", &attributes).map_err(Error::MalformedRelation)
+                        );
+                        let el_role = try!(
+                            find_attribute_uncasted("role", &attributes)
+                                .map_err(Error::MalformedRelation)
+                        );
 
                         let el = match el_type.to_lowercase().as_ref() {
                             "node" => Member::Node(UnresolvedReference::Node(el_ref), el_role),
@@ -224,8 +227,11 @@ fn parse_relation<R: Read>(parser: &mut EventReader<R>,
 
                         members.push(el);
                     }
-                    ElementType::Bounds | ElementType::Node | ElementType::Relation |
-                    ElementType::Way | ElementType::NodeRef => {
+                    ElementType::Bounds |
+                    ElementType::Node |
+                    ElementType::Relation |
+                    ElementType::Way |
+                    ElementType::NodeRef => {
                         return Err(Error::MalformedRelation(ErrorReason::IllegalNesting))
                     }
                 }
@@ -235,9 +241,10 @@ fn parse_relation<R: Read>(parser: &mut EventReader<R>,
     }
 }
 
-fn parse_way<R: Read>(parser: &mut EventReader<R>,
-             attrs: &Vec<OwnedAttribute>)
-             -> Result<ElementData, Error> {
+fn parse_way<R: Read>(
+    parser: &mut EventReader<R>,
+    attrs: &Vec<OwnedAttribute>,
+) -> Result<ElementData, Error> {
     let id = try!(find_attribute("id", attrs).map_err(Error::MalformedWay));
 
     let mut node_refs = Vec::new();
@@ -253,22 +260,25 @@ fn parse_way<R: Read>(parser: &mut EventReader<R>,
                     _ => continue,
                 }
             }
-            XmlEvent::StartElement { name, attributes, .. } => {
+            XmlEvent::StartElement {
+                name, attributes, ..
+            } => {
                 let element_type = try!(ElementType::from_str(&name.local_name));
 
                 match element_type {
-                    ElementType::Tag => {
-                        if let Ok(tag) = parse_tag(&attributes) {
-                            tags.push(tag);
-                        }
-                    }
+                    ElementType::Tag => if let Ok(tag) = parse_tag(&attributes) {
+                        tags.push(tag);
+                    },
                     ElementType::NodeRef => {
-                        let node_ref = try!(find_attribute("ref", &attributes)
-                            .map_err(Error::MalformedWay));
+                        let node_ref =
+                            try!(find_attribute("ref", &attributes).map_err(Error::MalformedWay));
                         node_refs.push(UnresolvedReference::Node(node_ref));
                     }
-                    ElementType::Bounds | ElementType::Node | ElementType::Relation |
-                    ElementType::Way | ElementType::Member => {
+                    ElementType::Bounds |
+                    ElementType::Node |
+                    ElementType::Relation |
+                    ElementType::Way |
+                    ElementType::Member => {
                         return Err(Error::MalformedWay(ErrorReason::IllegalNesting))
                     }
                 }
@@ -276,12 +286,12 @@ fn parse_way<R: Read>(parser: &mut EventReader<R>,
             _ => continue,
         }
     }
-
 }
 
-fn parse_node<R: Read>(parser: &mut EventReader<R>,
-              attrs: &Vec<OwnedAttribute>)
-              -> Result<ElementData, Error> {
+fn parse_node<R: Read>(
+    parser: &mut EventReader<R>,
+    attrs: &Vec<OwnedAttribute>,
+) -> Result<ElementData, Error> {
     let id = try!(find_attribute("id", attrs).map_err(Error::MalformedNode));
     let lat = try!(find_attribute("lat", attrs).map_err(Error::MalformedNode));
     let lon = try!(find_attribute("lon", attrs).map_err(Error::MalformedNode));
@@ -298,17 +308,21 @@ fn parse_node<R: Read>(parser: &mut EventReader<R>,
                     _ => continue,
                 }
             }
-            XmlEvent::StartElement { name, attributes, .. } => {
+            XmlEvent::StartElement {
+                name, attributes, ..
+            } => {
                 let element_type = try!(ElementType::from_str(&name.local_name));
 
                 match element_type {
-                    ElementType::Tag => {
-                        if let Ok(tag) = parse_tag(&attributes) {
-                            tags.push(tag);
-                        }
-                    }
-                    ElementType::Bounds | ElementType::Node | ElementType::Relation |
-                    ElementType::Way | ElementType::NodeRef | ElementType::Member => {
+                    ElementType::Tag => if let Ok(tag) = parse_tag(&attributes) {
+                        tags.push(tag);
+                    },
+                    ElementType::Bounds |
+                    ElementType::Node |
+                    ElementType::Relation |
+                    ElementType::Way |
+                    ElementType::NodeRef |
+                    ElementType::Member => {
                         return Err(Error::MalformedNode(ErrorReason::IllegalNesting))
                     }
                 }
@@ -321,10 +335,7 @@ fn parse_node<R: Read>(parser: &mut EventReader<R>,
 fn parse_tag(attributes: &Vec<OwnedAttribute>) -> Result<Tag, Error> {
     let key = try!(find_attribute_uncasted("k", attributes).map_err(Error::MalformedTag));
     let val = try!(find_attribute_uncasted("v", attributes).map_err(Error::MalformedTag));
-    Ok(Tag {
-        key: key,
-        val: val,
-    })
+    Ok(Tag { key: key, val: val })
 }
 
 fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
@@ -337,8 +348,9 @@ fn parse_bounds(attrs: &Vec<OwnedAttribute>) -> Result<ElementData, Error> {
 }
 
 fn find_attribute<T>(name: &str, attrs: &Vec<OwnedAttribute>) -> Result<T, ErrorReason>
-    where ErrorReason: From<<T as std::str::FromStr>::Err>,
-          T: FromStr
+where
+    ErrorReason: From<<T as std::str::FromStr>::Err>,
+    T: FromStr,
 {
     let val_raw = try!(find_attribute_uncasted(name, attrs));
     let val = try!(val_raw.parse::<T>());
