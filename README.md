@@ -45,7 +45,7 @@ fn main() {
     let doc = osm::OSM::parse(f).unwrap();
     let rel_info = relation_reference_statistics(&doc);
     let way_info = way_reference_statistics(&doc);
-    let poly_count = doc.ways.iter().fold(0, |acc, way| {
+    let poly_count = doc.ways.values().fold(0, |acc, way| {
         if way.is_polygon() {
             return acc + 1
         }
@@ -64,7 +64,7 @@ fn main() {
 }
 
 fn relation_reference_statistics(doc: &osm::OSM) -> (usize, usize, usize) {
-    doc.relations.iter()
+    doc.relations.values()
         .flat_map(|relation| relation.members.iter())
         .fold((0, 0, 0), |acc, member| {
             let el_ref = match *member {
@@ -83,7 +83,7 @@ fn relation_reference_statistics(doc: &osm::OSM) -> (usize, usize, usize) {
 }
 
 fn way_reference_statistics(doc: &osm::OSM) -> (usize, usize) {
-    doc.ways.iter()
+    doc.ways.values()
         .flat_map(|way| way.nodes.iter())
         .fold((0, 0), |acc, node| {
             match doc.resolve_reference(&node) {
@@ -96,13 +96,13 @@ fn way_reference_statistics(doc: &osm::OSM) -> (usize, usize) {
 }
 
 fn tag_count(doc: &osm::OSM) -> usize {
-    let node_tag_count = doc.nodes.iter()
+    let node_tag_count = doc.nodes.values()
         .map(|node| node.tags.len())
         .fold(0, |acc, c| acc + c);
-    let way_tag_count = doc.ways.iter()
+    let way_tag_count = doc.ways.values()
         .map(|way| way.tags.len())
         .fold(0, |acc, c| acc + c);
-    let relation_tag_count = doc.relations.iter()
+    let relation_tag_count = doc.relations.values()
         .map(|relation| relation.tags.len())
         .fold(0, |acc, c| acc + c);
 
