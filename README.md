@@ -21,15 +21,6 @@ key: String, val: String }`.
 
 ## Usage
 
-Add as dependency by adding this into `Cargo.toml`:
-
-```
-[dependencies]
-osm-xml = "0.5.1"
-```
-
-Then take crate into use with `extern crate osm_xml as osm;`.
-
 Below is simple example program which digs out some statistics from given
 osm-document. This includes parsing document, finding and using all the
 different kind of elements and resolving references (both resolvable and

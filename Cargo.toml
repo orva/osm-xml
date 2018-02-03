@@ -1,6 +1,6 @@
 [package]
 name = "osm-xml"
-version = "0.6.1"
+version = "0.6.2"
 authors = ["Iivari Äikäs <iivari.aikas@gmail.com>"]
 
 description = "OSM xml parser for Rust"
