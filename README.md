@@ -130,6 +130,12 @@ fn tag_count(doc: &osm::OSM) -> usize {
 
 
 ## Changelog
+### 0.6.0
+> 2018-02-03
+
+- Change core data structures from vector to hashmap (this is incompatible change)
+- Upgrade dependencies
+
 ### 0.5.1
 > 2017-04-25
 
